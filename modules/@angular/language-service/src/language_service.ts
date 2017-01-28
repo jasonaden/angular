@@ -6,15 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {NgAnalyzedModules} from '@angular/compiler/src/aot/compiler';
-import {CompileNgModuleMetadata} from '@angular/compiler/src/compile_metadata';
-import {Lexer} from '@angular/compiler/src/expression_parser/lexer';
-import {Parser} from '@angular/compiler/src/expression_parser/parser';
-import {I18NHtmlParser} from '@angular/compiler/src/i18n/i18n_html_parser';
-import {CompileMetadataResolver} from '@angular/compiler/src/metadata_resolver';
-import {HtmlParser} from '@angular/compiler/src/ml_parser/html_parser';
-import {DomElementSchemaRegistry} from '@angular/compiler/src/schema/dom_element_schema_registry';
-import {TemplateParser} from '@angular/compiler/src/template_parser/template_parser';
+import {CompileMetadataResolver, CompileNgModuleMetadata, DomElementSchemaRegistry, HtmlParser, I18NHtmlParser, Lexer, NgAnalyzedModules, Parser, TemplateParser} from '@angular/compiler';
 
 import {AstResult, AttrInfo, TemplateInfo} from './common';
 import {getTemplateCompletions} from './completions';
@@ -22,6 +14,7 @@ import {getDefinition} from './definitions';
 import {getDeclarationDiagnostics, getTemplateDiagnostics} from './diagnostics';
 import {getHover} from './hover';
 import {Completion, CompletionKind, Completions, Declaration, Declarations, Definition, Diagnostic, DiagnosticKind, Diagnostics, Hover, LanguageService, LanguageServiceHost, Location, PipeInfo, Pipes, Signature, Span, Symbol, SymbolDeclaration, SymbolQuery, SymbolTable, TemplateSource, TemplateSources} from './types';
+
 
 /**
  * Create an instance of an Angular `LanguageService`.

@@ -20,6 +20,8 @@ import * as key_events from './dom/events/key_events';
 import * as shared_styles_host from './dom/shared_styles_host';
 import {WebAnimationsDriver} from './dom/web_animations_driver';
 
+export {SharedStylesHost as ɵSharedStylesHost} from './dom/shared_styles_host';
+
 export const __platform_browser_private__: {
   _BrowserPlatformLocation?: location.BrowserPlatformLocation,
   BrowserPlatformLocation: typeof location.BrowserPlatformLocation,
