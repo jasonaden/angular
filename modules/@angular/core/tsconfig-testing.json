@@ -2,14 +2,14 @@
   "extends": "./tsconfig-build",
 
   "compilerOptions": {
-    "outDir": "../../../dist/packages-dist/core",
+    "outDir": "../../../dist/packages/core",
     "paths": {
       "rxjs/*": ["../../../node_modules/rxjs/*"],
-      "@angular/core": ["../../../dist/packages-dist/core"]
+      "@angular/core": ["../../../dist/packages/core"]
     }
   },
   "files": [
-    "testing/index.ts",
+    "testing.ts",
     "../../../node_modules/zone.js/dist/zone.js.d.ts",
     "../../system.d.ts"
   ],

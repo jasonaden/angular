@@ -143,14 +143,15 @@ if [[ ${BUILD_ALL} == true ]]; then
   rm -rf ./dist/packages-dist
 fi
 
+PWD=`pwd`
 for PACKAGE in ${PACKAGES[@]}
 do
-  PWD=`pwd`
   ROOTDIR=${PWD}/modules/@angular
   SRCDIR=${PWD}/modules/@angular/${PACKAGE}
-  DESTDIR=${PWD}/dist/packages-dist/${PACKAGE}
-  DEST_MODULE=${DESTDIR}/@angular
-  DEST_BUNDLES=${DESTDIR}/bundles
+  OUT_DIR=DESTDIR=${PWD}/dist/packages/${PACKAGE}
+  NPM_OUT_DIR=${PWD}/dist/packages-dist/${PACKAGE}
+  DEST_MODULE=${NPM_OUT_DIR}/@angular
+  DEST_BUNDLES=${NPM_OUT_DIR}/bundles
 
   # ESM/ES6
   JS_PATH=${DEST_MODULE}/${PACKAGE}.js
@@ -171,6 +172,14 @@ do
   UMD_STATIC_ES5_MIN_PATH=${DEST_BUNDLES}/${PACKAGE}-static.umd.min.js
   UMD_UPGRADE_ES5_MIN_PATH=${DEST_BUNDLES}/${PACKAGE}-upgrade.umd.min.js
 
+  for CONFIG in ${SRCDIR}/tsconfig-*.json; do
+    echo "Running: $TSC -p ${CONFIG}"
+    $TSC -p ${CONFIG}
+  done
+
+  echo `pwd`
+  exit 0;
+
   if [[ ${PACKAGE} != router ]]; then
     LICENSE_BANNER=${PWD}/modules/@angular/license-banner.txt
   fi
@@ -178,7 +187,7 @@ do
     LICENSE_BANNER=${PWD}/modules/@angular/router-license-banner.txt
   fi
 
-  rm -rf ${DESTDIR}
+  rm -rf ${NPM_OUT_DIR}
 
   echo "======      [${PACKAGE}]: COMPILING: ${TSC} --skipImportRename -p ${SRCDIR}/tsconfig-build.json"
   if [[ -e ${SRCDIR}/.babelrc || ${PACKAGE} == "compiler" ]]; then
@@ -189,12 +198,12 @@ do
 
   echo "======        Move ${PACKAGE} typings"
   if [[ -e ${SRCDIR}/.babelrc || -d ${DEST_MODULE} ]]; then
-    rsync -a --exclude=*.js --exclude=*.js.map ${DEST_MODULE}/ ${DESTDIR}/typings
-    mv ${DESTDIR}/typings/index.d.ts ${DESTDIR}/typings/${PACKAGE}.d.ts
-    mv ${DESTDIR}/typings/index.metadata.json ${DESTDIR}/typings/${PACKAGE}.metadata.json
+    rsync -a --exclude=*.js --exclude=*.js.map ${DEST_MODULE}/ ${NPM_OUT_DIR}/typings
+    mv ${NPM_OUT_DIR}/typings/index.d.ts ${NPM_OUT_DIR}/typings/${PACKAGE}.d.ts
+    mv ${NPM_OUT_DIR}/typings/index.metadata.json ${NPM_OUT_DIR}/typings/${PACKAGE}.metadata.json
   else
-    rsync -a --exclude=*.js --exclude=*.js.map ${DESTDIR}/ ${DESTDIR}/typings
-    find ${DESTDIR} -name "*.d.ts" -not -path "${DESTDIR}/typings/*" -exec rm -f {} \;
+    rsync -a --exclude=*.js --exclude=*.js.map ${NPM_OUT_DIR}/ ${NPM_OUT_DIR}/typings
+    find ${NPM_OUT_DIR} -name "*.d.ts" -not -path "${NPM_OUT_DIR}/typings/*" -exec rm -f {} \;
   fi
 
   if [[ -e ${SRCDIR}/tsconfig-es5.json ]]; then
@@ -202,11 +211,11 @@ do
     $TSC -p ${SRCDIR}/tsconfig-es5.json
   fi
 
-  cp ${SRCDIR}/package.json ${DESTDIR}/
+  cp ${SRCDIR}/package.json ${NPM_OUT_DIR}/
   if [[ -e ${SRCDIR}/.babelrc ]]; then
-    cp ${SRCDIR}/.babelrc ${DESTDIR}/
+    cp ${SRCDIR}/.babelrc ${NPM_OUT_DIR}/
   fi
-  cp ${PWD}/modules/@angular/README.md ${DESTDIR}/
+  cp ${PWD}/modules/@angular/README.md ${NPM_OUT_DIR}/
 
   if [[ -e ${SRCDIR}/tsconfig-upgrade.json ]]; then
     echo "======      [${PACKAGE}]: COMPILING (UPGRADE): ${TSC} -p ${SRCDIR}/tsconfig-upgrade.json"
@@ -229,8 +238,8 @@ do
   fi
 
   if [[ ${PACKAGE} == benchpress ]]; then
-    cp ${SRCDIR}/*.md ${DESTDIR}
-    cp -r ${SRCDIR}/docs ${DESTDIR}
+    cp ${SRCDIR}/*.md ${NPM_OUT_DIR}
+    cp -r ${SRCDIR}/docs ${NPM_OUT_DIR}
   fi
 
   if [[ ${BUNDLE} == true && ${PACKAGE} != compiler-cli && ${PACKAGE} != benchpress ]]; then
@@ -250,7 +259,7 @@ do
         cleanTypings ${DEST_MODULE} ${DEST_MODULE}/src
       fi
 
-      if [[ -e ${DESTDIR}/.babelrc ]]; then
+      if [[ -e ${NPM_OUT_DIR}/.babelrc ]]; then
 
         echo "======         Downleveling ${PACKAGE} to ES5/UMD"
         $BABELJS ${JS_PATH} -o ${UMD_ES5_PATH}
@@ -268,7 +277,7 @@ do
         # For packages not running through babel, use the es5/umd config
         echo "======         Rollup ${PACKAGE} index to UMD"
         ../../../node_modules/.bin/rollup -c rollup-umd.config.js
-        [[ -d ${DESTDIR}/es5 ]] && rm -rf ${DESTDIR}/es5
+        [[ -d ${NPM_OUT_DIR}/es5 ]] && rm -rf ${NPM_OUT_DIR}/es5
         echo "======         Minifying UMD ${PACKAGE}"
         $UGLIFYJS -c --screw-ie8 --comments -o ${UMD_ES5_MIN_PATH} ${UMD_ES5_PATH}
       fi
@@ -279,25 +288,25 @@ do
 
       if [[ -d testing ]]; then
         echo "======         Rollup ${PACKAGE} testing"
-        ../../../node_modules/.bin/rollup -i ${DESTDIR}/testing/index.js -o ${DESTDIR}/testing.tmp.js
+        ../../../node_modules/.bin/rollup -i ${NPM_OUT_DIR}/testing/index.js -o ${NPM_OUT_DIR}/testing.tmp.js
 
         echo "======         Downleveling ${PACKAGE} TESTING to ES5/UMD"
-        [[ -e ${SRCDIR}/.babelrc-testing ]] && cp ${SRCDIR}/.babelrc-testing ${DESTDIR}/.babelrc
-        $BABELJS ${DESTDIR}/testing.tmp.js -o ${UMD_TESTING_ES5_PATH}
-        rm -f ${DESTDIR}/.babelrc
+        [[ -e ${SRCDIR}/.babelrc-testing ]] && cp ${SRCDIR}/.babelrc-testing ${NPM_OUT_DIR}/.babelrc
+        $BABELJS ${NPM_OUT_DIR}/testing.tmp.js -o ${UMD_TESTING_ES5_PATH}
+        rm -f ${NPM_OUT_DIR}/.babelrc
 
         echo "======         Move ${PACKAGE} testing typings"
-        rsync -a --exclude=*.js --exclude=*.js.map ${DESTDIR}/testing/ ${DESTDIR}/typings/testing
-        mv ${DESTDIR}/typings/testing/index.d.ts ${DESTDIR}/typings/testing/testing.d.ts
-        mv ${DESTDIR}/typings/testing/index.metadata.json ${DESTDIR}/typings/testing/testing.metadata.json
+        rsync -a --exclude=*.js --exclude=*.js.map ${NPM_OUT_DIR}/testing/ ${NPM_OUT_DIR}/typings/testing
+        mv ${NPM_OUT_DIR}/typings/testing/index.d.ts ${NPM_OUT_DIR}/typings/testing/testing.d.ts
+        mv ${NPM_OUT_DIR}/typings/testing/index.metadata.json ${NPM_OUT_DIR}/typings/testing/testing.metadata.json
 
-        rm -rf ${DESTDIR}/testing
+        rm -rf ${NPM_OUT_DIR}/testing
 
-        mkdir ${DESTDIR}/testing && [[ -d ${DEST_MODULE}/${PACKAGE} ]] || mkdir ${DEST_MODULE}/${PACKAGE}
+        mkdir ${NPM_OUT_DIR}/testing && [[ -d ${DEST_MODULE}/${PACKAGE} ]] || mkdir ${DEST_MODULE}/${PACKAGE}
 
-        getPackageContents "${PACKAGE}" "testing" > ${DESTDIR}/testing/package.json
+        getPackageContents "${PACKAGE}" "testing" > ${NPM_OUT_DIR}/testing/package.json
 
-        mv ${DESTDIR}/testing.tmp.js ${JS_TESTING_PATH}
+        mv ${NPM_OUT_DIR}/testing.tmp.js ${JS_TESTING_PATH}
         $BABELJS ${JS_TESTING_PATH} -o ${JS_TESTING_PATH_ES5}
         cat ${LICENSE_BANNER} > ${UMD_TESTING_ES5_PATH}.tmp
         cat ${UMD_TESTING_ES5_PATH} >> ${UMD_TESTING_ES5_PATH}.tmp
@@ -307,23 +316,23 @@ do
       if [[ -e static.ts ]]; then
         echo "======         Rollup ${PACKAGE} static"
         rm -f ${DEST_MODULE}/static.*
-        ../../../node_modules/.bin/rollup -i ${DESTDIR}/static/static.js -o ${DESTDIR}/static.tmp.js
+        ../../../node_modules/.bin/rollup -i ${NPM_OUT_DIR}/static/static.js -o ${NPM_OUT_DIR}/static.tmp.js
 
         echo "======         Downleveling ${PACKAGE} STATIC to ES5/UMD"
-        [[ -e ${SRCDIR}/.babelrc-static ]] && cp ${SRCDIR}/.babelrc-static ${DESTDIR}/.babelrc
-        $BABELJS ${DESTDIR}/static.tmp.js -o ${UMD_STATIC_ES5_PATH}
-        rm -f ${DESTDIR}/.babelrc
+        [[ -e ${SRCDIR}/.babelrc-static ]] && cp ${SRCDIR}/.babelrc-static ${NPM_OUT_DIR}/.babelrc
+        $BABELJS ${NPM_OUT_DIR}/static.tmp.js -o ${UMD_STATIC_ES5_PATH}
+        rm -f ${NPM_OUT_DIR}/.babelrc
 
         echo "======         Move ${PACKAGE} static typings"
-        rsync -a --exclude=*.js ${DESTDIR}/static/ ${DESTDIR}/typings/static
-        rm -f ${DESTDIR}/typings/static/index.d.ts
-        rm -rf ${DESTDIR}/static
+        rsync -a --exclude=*.js ${NPM_OUT_DIR}/static/ ${NPM_OUT_DIR}/typings/static
+        rm -f ${NPM_OUT_DIR}/typings/static/index.d.ts
+        rm -rf ${NPM_OUT_DIR}/static
 
-        mkdir ${DESTDIR}/static && [[ -d ${DEST_MODULE}/${PACKAGE} ]] || mkdir ${DEST_MODULE}/${PACKAGE}
+        mkdir ${NPM_OUT_DIR}/static && [[ -d ${DEST_MODULE}/${PACKAGE} ]] || mkdir ${DEST_MODULE}/${PACKAGE}
 
-        getPackageContents "${PACKAGE}" "static"> ${DESTDIR}/static/package.json
+        getPackageContents "${PACKAGE}" "static"> ${NPM_OUT_DIR}/static/package.json
 
-        mv ${DESTDIR}/static.tmp.js ${JS_STATIC_PATH}
+        mv ${NPM_OUT_DIR}/static.tmp.js ${JS_STATIC_PATH}
         $BABELJS ${JS_STATIC_PATH} -o ${JS_STATIC_PATH_ES5}
         cat ${LICENSE_BANNER} > ${UMD_STATIC_ES5_PATH}.tmp
         cat ${UMD_STATIC_ES5_PATH} >> ${UMD_STATIC_ES5_PATH}.tmp
@@ -334,23 +343,23 @@ do
       if [[ -e upgrade.ts ]]; then
         echo "======         Rollup ${PACKAGE} upgrade"
         rm -f ${DEST_MODULE}/upgrade.*
-        ../../../node_modules/.bin/rollup -i ${DESTDIR}/upgrade/upgrade.js -o ${DESTDIR}/upgrade.tmp.js
+        ../../../node_modules/.bin/rollup -i ${NPM_OUT_DIR}/upgrade/upgrade.js -o ${NPM_OUT_DIR}/upgrade.tmp.js
 
         echo "======         Downleveling ${PACKAGE} UPGRADE to ES5/UMD"
-        [[ -e ${SRCDIR}/.babelrc-upgrade ]] && cp ${SRCDIR}/.babelrc-upgrade ${DESTDIR}/.babelrc
-        $BABELJS ${DESTDIR}/upgrade.tmp.js -o ${UMD_UPGRADE_ES5_PATH}
-        rm -f ${DESTDIR}/.babelrc
+        [[ -e ${SRCDIR}/.babelrc-upgrade ]] && cp ${SRCDIR}/.babelrc-upgrade ${NPM_OUT_DIR}/.babelrc
+        $BABELJS ${NPM_OUT_DIR}/upgrade.tmp.js -o ${UMD_UPGRADE_ES5_PATH}
+        rm -f ${NPM_OUT_DIR}/.babelrc
 
         echo "======         Move ${PACKAGE} upgrade typings"
-        rsync -a --exclude=*.js ${DESTDIR}/upgrade/ ${DESTDIR}/typings/upgrade
-        rm -f ${DESTDIR}/typings/upgrade/index.d.ts
-        rm -rf ${DESTDIR}/upgrade
+        rsync -a --exclude=*.js ${NPM_OUT_DIR}/upgrade/ ${NPM_OUT_DIR}/typings/upgrade
+        rm -f ${NPM_OUT_DIR}/typings/upgrade/index.d.ts
+        rm -rf ${NPM_OUT_DIR}/upgrade
 
-        mkdir ${DESTDIR}/upgrade && [[ -d ${DEST_MODULE}/${PACKAGE} ]] || mkdir ${DEST_MODULE}/${PACKAGE}
+        mkdir ${NPM_OUT_DIR}/upgrade && [[ -d ${DEST_MODULE}/${PACKAGE} ]] || mkdir ${DEST_MODULE}/${PACKAGE}
 
-        getPackageContents "${PACKAGE}" "upgrade" > ${DESTDIR}/upgrade/package.json
+        getPackageContents "${PACKAGE}" "upgrade" > ${NPM_OUT_DIR}/upgrade/package.json
 
-        mv ${DESTDIR}/upgrade.tmp.js ${JS_UPGRADE_PATH}
+        mv ${NPM_OUT_DIR}/upgrade.tmp.js ${JS_UPGRADE_PATH}
         $BABELJS ${JS_UPGRADE_PATH} -o ${JS_UPGRADE_PATH_ES5}
         cat ${LICENSE_BANNER} > ${UMD_UPGRADE_ES5_PATH}.tmp
         cat ${UMD_UPGRADE_ES5_PATH} >> ${UMD_UPGRADE_ES5_PATH}.tmp
@@ -366,7 +375,7 @@ do
     if [[ -e ${SRCDIR}/.babelrc ]]; then
       cd ${DEST_MODULE}
     else
-      cd ${DESTDIR}
+      cd ${NPM_OUT_DIR}
     fi
     echo "======       EXECUTE: perl -p -i -e \"s/0\.0\.0\-PLACEHOLDER/${VERSION}/g\" $""(grep -ril 0\.0\.0\-PLACEHOLDER .)"
     perl -p -i -e "s/0\.0\.0\-PLACEHOLDER/${VERSION}/g" $(grep -ril 0\.0\.0\-PLACEHOLDER .) < /dev/null 2> /dev/null

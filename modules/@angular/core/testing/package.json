@@ -1,0 +1,6 @@
+{
+  "main": "../bundles/core-testing.umd.js",
+  "module": "../@angular/core/testing.es5.js",
+  "es2015": "../@angular/core/testing.js",
+  "typings": "../typings/testing.d.ts"
+}
