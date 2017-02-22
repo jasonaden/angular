@@ -54,33 +54,24 @@ for ARG in "$@"; do
 done
 
 getPackageContents() {
-  echo "{\"typings\": \"../typings/${2}/${2}.d.ts\", \"main\": \"../bundles/${1}-${2}.umd.js\", \"module\": \"../@angular/${1}/${2}.es5.js\", \"es2015\": \"../@angular/${1}/${2}.js\"}"
+  echo "{\"typings\": \"../typings/${2}/index.d.ts\", \"main\": \"../bundles/${1}-${2}.umd.js\", \"module\": \"../@angular/${1}/${2}.es5.js\", \"es2015\": \"../@angular/${1}/${2}.js\"}"
 }
 
-containsElement () {
-  local e
-  for e in "${@:2}"; do
-    [[ "$e" == "$1" ]] && return 0;
-  done
-  return 1
+#######################################
+# Downsamples ES2015 to ESM/ES5
+# Arguments:
+#   param1 - Destination folder
+#   param2 - Input path
+#   param3 - Output path
+# Returns:
+#   None
+#######################################
+downsampleES2015() {
+  echo '{"presets": [ ["es2015", { "modules": false }] ] }' > ${1}/.babelrc
+  $BABELJS ${2} -o ${3}
+  rm -f ${1}/.babelrc
 }
 
-NON_MODULE=(
-  platform-browser
-)
-
-moveTypings() {
-  # $1 == Source copy root (/src or /testing)
-  # $2 == Final destination directory
-  rsync -a --exclude=*.js* ${1} ${2}
-}
-
-cleanTypings() {
-  # $1 == Source root (where index.d.ts file is, for instance)
-  # $2 == Source copy root (/src or /typings)
-  rm -f ${1}/index.*
-  rm -rf ${2}
-}
 VERSION="${VERSION_PREFIX}${VERSION_SUFFIX}"
 ROUTER_VERSION="${ROUTER_VERSION_PREFIX}${VERSION_SUFFIX}"
 echo "====== BUILDING: Version ${VERSION} (Router ${ROUTER_VERSION})"
@@ -152,7 +143,7 @@ do
   DEST_MODULE=${DESTDIR}/@angular
   DEST_BUNDLES=${DESTDIR}/bundles
 
-  # ESM/ES6
+  # ESM/2015
   JS_PATH=${DEST_MODULE}/${PACKAGE}.js
   JS_PATH_ES5=${DEST_MODULE}/${PACKAGE}.es5.js
   JS_TESTING_PATH=${DEST_MODULE}/${PACKAGE}/testing.js
@@ -187,18 +178,20 @@ do
 
   rm -rf ${DESTDIR}
 
-  echo "======      [${PACKAGE}]: COMPILING: ${TSC} --skipImportRename -p ${SRCDIR}/tsconfig-build.json"
+  # When .babelrc file exists, the dist package will have ES2015 sources, ESM/ES5, and UMD bundles. Because of a bug
+  # preventing the Compiler package from running through this pipeline, we have to manually check for the Compiler
+  # package as well. The tsconfig-build.json defaults to building to the root of the package dist dir, but when
+  # outputting ES2015 then bundling from there, built files should go to the DEST_MODULE folder.
+  echo "======      [${PACKAGE}]: COMPILING: ${TSC} -p ${SRCDIR}/tsconfig-build.json"
   if [[ -e ${SRCDIR}/.babelrc || ${PACKAGE} == "compiler" ]]; then
-    $TSC --skipImportRename -p ${SRCDIR}/tsconfig-build.json -outDir ${DEST_MODULE}
+    $TSC -p ${SRCDIR}/tsconfig-build.json -outDir ${DEST_MODULE}
   else
-    $TSC --skipImportRename -p ${SRCDIR}/tsconfig-build.json
+    $TSC -p ${SRCDIR}/tsconfig-build.json
   fi
 
   echo "======        Move ${PACKAGE} typings"
   if [[ -e ${SRCDIR}/.babelrc || -d ${DEST_MODULE} ]]; then
     rsync -a --exclude=*.js --exclude=*.js.map ${DEST_MODULE}/ ${DESTDIR}/typings
-    mv ${DESTDIR}/typings/index.d.ts ${DESTDIR}/typings/${PACKAGE}.d.ts
-    mv ${DESTDIR}/typings/index.metadata.json ${DESTDIR}/typings/${PACKAGE}.metadata.json
   else
     rsync -a --exclude=*.js --exclude=*.js.map ${DESTDIR}/ ${DESTDIR}/typings
     find ${DESTDIR} -name "*.d.ts" -not -path "${DESTDIR}/typings/*" -exec rm -f {} \;
@@ -263,50 +256,44 @@ do
       cat ${JS_PATH} >> ${JS_PATH}.tmp
       mv ${JS_PATH}.tmp ${JS_PATH}
 
-      if ! [[ ${PACKAGE} == 'benchpress' ]]; then
-        cleanTypings ${DEST_MODULE} ${DEST_MODULE}/src
-      fi
-
       if [[ -e ${DESTDIR}/.babelrc ]]; then
 
-        echo "======         Downleveling ${PACKAGE} to ES5/UMD"
+        echo "======         Downleveling ES2015 to UMD/ES5"
         $BABELJS ${JS_PATH} -o ${UMD_ES5_PATH}
 
         ### Minification ###
-        echo "======         Minifying JavaScript"
+        echo "======         Minifying ES2015"
         $BABILI ${JS_PATH} -o ${UMD_ES5_MIN_PATH}
-        echo "======         Downleveling min JavaScript to ES5/UMD"
+        echo "======         Downleveling minified ES2015 to UMD/ES5"
         $BABELJS ${UMD_ES5_MIN_PATH} -o ${UMD_ES5_MIN_PATH}
 
-        echo "======         Minifying ${PACKAGE}"
+        echo "======         Minifying UMD/ES5"
         $UGLIFYJS -c --screw-ie8 --comments -o ${UMD_ES5_MIN_PATH} ${UMD_ES5_MIN_PATH}
         ### END Minification ###
       else
-        # For packages not running through babel, use the es5/umd config
-        echo "======         Rollup ${PACKAGE} index to UMD"
+        # For packages not running through babel, use the UMD/ES5 config
+        echo "======         Rollup ${PACKAGE} index to UMD/ES5"
         ../../../node_modules/.bin/rollup -c rollup-umd.config.js
         [[ -d ${DESTDIR}/es5 ]] && rm -rf ${DESTDIR}/es5
-        echo "======         Minifying UMD ${PACKAGE}"
+        echo "======         Minifying UMD/ES5"
         $UGLIFYJS -c --screw-ie8 --comments -o ${UMD_ES5_MIN_PATH} ${UMD_ES5_PATH}
       fi
 
       rm -f ${DISTDIR}/.babelrc
-      cp ${ROOTDIR}/.babelrc ${DEST_MODULE}/.babelrc
-      $BABELJS ${JS_PATH} -o ${JS_PATH_ES5}
+      echo "======         Downleveling ES2015 to ESM/ES5"
+      downsampleES2015 ${DEST_MODULE} ${JS_PATH} ${JS_PATH_ES5}
 
       if [[ -d testing ]]; then
         echo "======         Rollup ${PACKAGE} testing"
         ../../../node_modules/.bin/rollup -i ${DESTDIR}/testing/index.js -o ${DESTDIR}/testing.tmp.js
 
-        echo "======         Downleveling ${PACKAGE} TESTING to ES5/UMD"
+        echo "======         Downleveling ${PACKAGE} TESTING to UMD/ES5"
         [[ -e ${SRCDIR}/.babelrc-testing ]] && cp ${SRCDIR}/.babelrc-testing ${DESTDIR}/.babelrc
         $BABELJS ${DESTDIR}/testing.tmp.js -o ${UMD_TESTING_ES5_PATH}
         rm -f ${DESTDIR}/.babelrc
 
         echo "======         Move ${PACKAGE} testing typings"
         rsync -a --exclude=*.js --exclude=*.js.map ${DESTDIR}/testing/ ${DESTDIR}/typings/testing
-        mv ${DESTDIR}/typings/testing/index.d.ts ${DESTDIR}/typings/testing/testing.d.ts
-        mv ${DESTDIR}/typings/testing/index.metadata.json ${DESTDIR}/typings/testing/testing.metadata.json
 
         rm -rf ${DESTDIR}/testing
 
@@ -326,14 +313,16 @@ do
         rm -f ${DEST_MODULE}/static.*
         ../../../node_modules/.bin/rollup -i ${DESTDIR}/static/static.js -o ${DESTDIR}/static.tmp.js
 
-        echo "======         Downleveling ${PACKAGE} STATIC to ES5/UMD"
+        echo "======         Downleveling ${PACKAGE} STATIC to UMD/ES5"
         [[ -e ${SRCDIR}/.babelrc-static ]] && cp ${SRCDIR}/.babelrc-static ${DESTDIR}/.babelrc
         $BABELJS ${DESTDIR}/static.tmp.js -o ${UMD_STATIC_ES5_PATH}
         rm -f ${DESTDIR}/.babelrc
 
         echo "======         Move ${PACKAGE} static typings"
         rsync -a --exclude=*.js ${DESTDIR}/static/ ${DESTDIR}/typings/static
-        rm -f ${DESTDIR}/typings/static/index.d.ts
+        mv ${DESTDIR}/typings/static/static.d.ts ${DESTDIR}/typings/static/index.d.ts
+        mv ${DESTDIR}/typings/static/static.js.map ${DESTDIR}/typings/static/index.js.map
+        mv ${DESTDIR}/typings/static/static.metadata.json ${DESTDIR}/typings/static/index.metadata.json
         rm -rf ${DESTDIR}/static
 
         mkdir ${DESTDIR}/static && [[ -d ${DEST_MODULE}/${PACKAGE} ]] || mkdir ${DEST_MODULE}/${PACKAGE}
@@ -353,14 +342,16 @@ do
         rm -f ${DEST_MODULE}/upgrade.*
         ../../../node_modules/.bin/rollup -i ${DESTDIR}/upgrade/upgrade.js -o ${DESTDIR}/upgrade.tmp.js
 
-        echo "======         Downleveling ${PACKAGE} UPGRADE to ES5/UMD"
+        echo "======         Downleveling ${PACKAGE} UPGRADE to UMD/ES5"
         [[ -e ${SRCDIR}/.babelrc-upgrade ]] && cp ${SRCDIR}/.babelrc-upgrade ${DESTDIR}/.babelrc
         $BABELJS ${DESTDIR}/upgrade.tmp.js -o ${UMD_UPGRADE_ES5_PATH}
         rm -f ${DESTDIR}/.babelrc
 
         echo "======         Move ${PACKAGE} upgrade typings"
         rsync -a --exclude=*.js ${DESTDIR}/upgrade/ ${DESTDIR}/typings/upgrade
-        rm -f ${DESTDIR}/typings/upgrade/index.d.ts
+        mv ${DESTDIR}/typings/upgrade/upgrade.d.ts ${DESTDIR}/typings/upgrade/index.d.ts
+        mv ${DESTDIR}/typings/upgrade/upgrade.js.map ${DESTDIR}/typings/upgrade/index.js.map
+        mv ${DESTDIR}/typings/upgrade/upgrade.metadata.json ${DESTDIR}/typings/upgrade/index.metadata.json
         rm -rf ${DESTDIR}/upgrade
 
         mkdir ${DESTDIR}/upgrade && [[ -d ${DEST_MODULE}/${PACKAGE} ]] || mkdir ${DEST_MODULE}/${PACKAGE}
