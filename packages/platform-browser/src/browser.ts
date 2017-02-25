@@ -9,6 +9,7 @@
 import {CommonModule, PlatformLocation, ɵPLATFORM_BROWSER_ID as PLATFORM_BROWSER_ID} from '@angular/common';
 import {APP_ID, ApplicationModule, ErrorHandler, ModuleWithProviders, NgModule, Optional, PLATFORM_ID, PLATFORM_INITIALIZER, PlatformRef, Provider, RendererFactory2, RootRenderer, Sanitizer, SkipSelf, Testability, createPlatformFactory, platformCore} from '@angular/core';
 
+import {BROWSER_ANIMATIONS_PROVIDERS} from '../animations/src/providers';
 import {BrowserDomAdapter} from './browser/browser_adapter';
 import {BrowserPlatformLocation} from './browser/location/browser_platform_location';
 import {Meta} from './browser/meta';
@@ -85,6 +86,7 @@ export function _document(): any {
     ELEMENT_PROBE_PROVIDERS,
     Meta,
     Title,
+    BROWSER_ANIMATIONS_PROVIDERS,
   ],
   exports: [CommonModule, ApplicationModule]
 })

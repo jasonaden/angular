@@ -7,6 +7,7 @@
  */
 import {APP_ID, NgModule, NgZone, PLATFORM_INITIALIZER, PlatformRef, Provider, createPlatformFactory, platformCore} from '@angular/core';
 import {BrowserModule, ɵBrowserDomAdapter as BrowserDomAdapter, ɵELEMENT_PROBE_PROVIDERS as ELEMENT_PROBE_PROVIDERS} from '@angular/platform-browser';
+import {BROWSER_NOOP_ANIMATIONS_PROVIDERS} from '../../animations/src/providers';
 import {BrowserDetection, createNgZone} from './browser_util';
 
 function initBrowserTests() {
@@ -36,6 +37,7 @@ export const platformBrowserTesting =
     {provide: APP_ID, useValue: 'a'},
     ELEMENT_PROBE_PROVIDERS,
     {provide: NgZone, useFactory: createNgZone},
+    BROWSER_NOOP_ANIMATIONS_PROVIDERS
   ]
 })
 export class BrowserTestingModule {
