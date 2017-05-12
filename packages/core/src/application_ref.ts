@@ -6,11 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {Observable} from 'rxjs/Observable';
+import {Observable, Subscribable} from 'rxjs/Observable';
 import {Observer} from 'rxjs/Observer';
 import {Subscription} from 'rxjs/Subscription';
-import {merge} from 'rxjs/observable/merge';
-import {share} from 'rxjs/operator/share';
 
 import {ErrorHandler} from '../src/error_handler';
 import {scheduleMicroTask, stringify} from '../src/util';
@@ -411,7 +409,7 @@ export abstract class ApplicationRef {
   /**
    * Returns an Observable that indicates when the application is stable or unstable.
    */
-  abstract get isStable(): Observable<boolean>;
+  abstract get isStable(): Subscribable<boolean>;
 }
 
 /**
@@ -429,7 +427,7 @@ export class ApplicationRef_ extends ApplicationRef {
   private _views: InternalViewRef[] = [];
   private _runningTick: boolean = false;
   private _enforceNoNewChanges: boolean = false;
-  private _isStable: Observable<boolean>;
+  private _isStable: Subscribable<boolean>;
   private _stable = true;
 
   constructor(
@@ -443,16 +441,11 @@ export class ApplicationRef_ extends ApplicationRef {
     this._zone.onMicrotaskEmpty.subscribe(
         {next: () => { this._zone.run(() => { this.tick(); }); }});
 
-    const isCurrentlyStable = new EventEmitter<boolean>((observer: Observer<boolean>) => {
+    this._isStable = new EventEmitter<boolean>((observer: Observer<boolean>) => {
       this._stable = this._zone.isStable && !this._zone.hasPendingMacrotasks &&
-          !this._zone.hasPendingMicrotasks;
-      this._zone.runOutsideAngular(() => {
-        observer.next(this._stable);
-        observer.complete();
-      });
-    });
+        !this._zone.hasPendingMicrotasks;
+      this._zone.runOutsideAngular(() => observer.next(this._stable));
 
-    const isStable = new EventEmitter<boolean>((observer: Observer<boolean>) => {
       const stableSub: Subscription = this._zone.onStable.subscribe(() => {
         NgZone.assertNotInAngularZone();
 
@@ -480,8 +473,6 @@ export class ApplicationRef_ extends ApplicationRef {
         unstableSub.unsubscribe();
       };
     });
-
-    this._isStable = merge(isCurrentlyStable, share.call(isStable));
   }
 
   attachView(viewRef: ViewRef): void {
@@ -580,7 +571,7 @@ export class ApplicationRef_ extends ApplicationRef {
 
   get components(): ComponentRef<any>[] { return this._rootComponents; }
 
-  get isStable(): Observable<boolean> { return this._isStable; }
+  get isStable(): Subscribable<boolean> { return this._isStable; }
 }
 
 function remove<T>(list: T[], el: T): void {
