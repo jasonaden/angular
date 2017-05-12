@@ -89,10 +89,10 @@ export class NgZone {
 
   private _isStable = true;
   private _nesting: number = 0;
-  private _onUnstable: EventEmitter<any> = new EventEmitter(false);
-  private _onMicrotaskEmpty: EventEmitter<any> = new EventEmitter(false);
-  private _onStable: EventEmitter<any> = new EventEmitter(false);
-  private _onErrorEvents: EventEmitter<any> = new EventEmitter(false);
+  private _onUnstable: EventEmitter<any> = new EventEmitter();
+  private _onMicrotaskEmpty: EventEmitter<any> = new EventEmitter();
+  private _onStable: EventEmitter<any> = new EventEmitter();
+  private _onErrorEvents: EventEmitter<any> = new EventEmitter();
 
   constructor({enableLongStackTrace = false}) {
     if (typeof Zone == 'undefined') {

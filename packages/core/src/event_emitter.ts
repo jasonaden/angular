@@ -8,7 +8,7 @@
 
 import {Subscribable, Observable} from 'rxjs/Observable';
 import { Observer, PartialObserver } from 'rxjs/Observer';
-import {TeardownLogic, Subscription } from 'rxjs/Subscription';
+import {TeardownLogic, ISubscription } from 'rxjs/Subscription';
 import {Subscriber} from "rxjs/Subscriber";
 
 function noop() {}
@@ -67,8 +67,6 @@ export class EventEmitter<T> implements Subscribable<T> {
   private completeObserver: null | (() => void);
   private subscribeFn: null | ((observer: Observer<T>) => TeardownLogic);
   private teardown: TeardownLogic | null;
-  private closed: boolean;
-  private add: boolean;
 
   constructor(subscribe?: (observer: Observer<T>) => TeardownLogic) {
     if (subscribe) {
@@ -81,7 +79,7 @@ export class EventEmitter<T> implements Subscribable<T> {
   error(err: any) {this.errorObserver && this.errorObserver(err); }
   complete() {this.completeObserver && this.completeObserver(); }
 
-  subscribe(observerOrNext?: PartialObserver<T> | ((value: T) => void), error?: (error: any) => void, complete?: () => void): Subscription {
+  subscribe(observerOrNext?: PartialObserver<T> | ((value: T) => void), error?: (error: any) => void, complete?: () => void): ISubscription {
     if (this.nextObserver) new Error('Only one subscription is supported.');
 
     let partial = observerOrNext && typeof observerOrNext == 'object' && observerOrNext;

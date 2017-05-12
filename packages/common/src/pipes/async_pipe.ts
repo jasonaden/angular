@@ -7,19 +7,19 @@
  */
 
 import {ChangeDetectorRef, EventEmitter, OnDestroy, Pipe, PipeTransform, WrappedValue, ɵisObservable, ɵisPromise} from '@angular/core';
-import {Observable} from 'rxjs/Observable';
+import {Subscribable} from 'rxjs/Observable';
 import {ISubscription} from 'rxjs/Subscription';
 import {invalidPipeArgumentError} from './invalid_pipe_argument_error';
 
 interface SubscriptionStrategy {
-  createSubscription(async: Observable<any>|Promise<any>, updateLatestValue: any): ISubscription
+  createSubscription(async: Subscribable<any>|Promise<any>, updateLatestValue: any): ISubscription
       |Promise<any>;
   dispose(subscription: ISubscription|Promise<any>): void;
   onDestroy(subscription: ISubscription|Promise<any>): void;
 }
 
 class ObservableStrategy implements SubscriptionStrategy {
-  createSubscription(async: Observable<any>, updateLatestValue: any): ISubscription {
+  createSubscription(async: Subscribable<any>, updateLatestValue: any): ISubscription {
     return async.subscribe({next: updateLatestValue, error: (e: any) => { throw e; }});
   }
 
@@ -72,7 +72,7 @@ export class AsyncPipe implements OnDestroy, PipeTransform {
   private _latestReturnedValue: any = null;
 
   private _subscription: ISubscription|Promise<any>|null = null;
-  private _obj: Observable<any>|Promise<any>|EventEmitter<any>|null = null;
+  private _obj: Subscribable<any>|Promise<any>|null = null;
   private _strategy: SubscriptionStrategy = null !;
 
   constructor(private _ref: ChangeDetectorRef) {}
@@ -85,9 +85,9 @@ export class AsyncPipe implements OnDestroy, PipeTransform {
 
   transform<T>(obj: null): null;
   transform<T>(obj: undefined): undefined;
-  transform<T>(obj: Observable<T>): T|null;
+  transform<T>(obj: Subscribable<T>): T|null;
   transform<T>(obj: Promise<T>): T|null;
-  transform(obj: Observable<any>|Promise<any>|null|undefined): any {
+  transform(obj: Subscribable<any>|Promise<any>|null|undefined): any {
     if (!this._obj) {
       if (obj) {
         this._subscribe(obj);
@@ -109,14 +109,14 @@ export class AsyncPipe implements OnDestroy, PipeTransform {
     return WrappedValue.wrap(this._latestValue);
   }
 
-  private _subscribe(obj: Observable<any>|Promise<any>|EventEmitter<any>): void {
+  private _subscribe(obj: Subscribable<any>|Promise<any>): void {
     this._obj = obj;
     this._strategy = this._selectStrategy(obj);
     this._subscription = this._strategy.createSubscription(
         obj, (value: Object) => this._updateLatestValue(obj, value));
   }
 
-  private _selectStrategy(obj: Observable<any>|Promise<any>|EventEmitter<any>): any {
+  private _selectStrategy(obj: Subscribable<any>|Promise<any>): any {
     if (ɵisPromise(obj)) {
       return _promiseStrategy;
     }

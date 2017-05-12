@@ -130,7 +130,9 @@ export class Location {
   subscribe(
       onNext: (value: PopStateEvent) => void, onThrow?: ((exception: any) => void)|null,
       onReturn?: (() => void)|null): Object {
-    return this._subject.subscribe({next: onNext, error: onThrow, complete: onReturn});
+    // TODO(jasonaden): error and complete need "!" because the Observer doesn't allow nulls. This should be fixed
+    // so types can flow through to Rx (or create our own interfaces for these types)
+    return this._subject.subscribe({next: onNext, error: onThrow!, complete: onReturn!});
   }
 
   /**

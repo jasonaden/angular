@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {Observable} from 'rxjs/Observable';
+import {Observable, Subscribable} from 'rxjs/Observable';
 
 import {EventEmitter} from '../event_emitter';
 import {getSymbolIterator} from '../util';
@@ -41,7 +41,7 @@ export class QueryList<T>/* implements Iterable<T> */ {
   private _results: Array<T> = [];
   private _emitter = new EventEmitter();
 
-  get changes(): Observable<any> { return this._emitter; }
+  get changes(): Subscribable<any> { return this._emitter; }
   get length(): number { return this._results.length; }
   get first(): T { return this._results[0]; }
   get last(): T { return this._results[this.length - 1]; }
