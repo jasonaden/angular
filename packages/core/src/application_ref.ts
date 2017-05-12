@@ -29,6 +29,7 @@ import {WtfScopeFn, wtfCreateScope, wtfLeave} from './profile/profile';
 import {Testability, TestabilityRegistry} from './testability/testability';
 import {Type} from './type';
 import {NgZone} from './zone/ng_zone';
+import {EventEmitter} from "./event_emitter";
 
 let _devMode: boolean = true;
 let _runModeLocked: boolean = false;
@@ -442,7 +443,7 @@ export class ApplicationRef_ extends ApplicationRef {
     this._zone.onMicrotaskEmpty.subscribe(
         {next: () => { this._zone.run(() => { this.tick(); }); }});
 
-    const isCurrentlyStable = new Observable<boolean>((observer: Observer<boolean>) => {
+    const isCurrentlyStable = new EventEmitter<boolean>((observer: Observer<boolean>) => {
       this._stable = this._zone.isStable && !this._zone.hasPendingMacrotasks &&
           !this._zone.hasPendingMicrotasks;
       this._zone.runOutsideAngular(() => {
@@ -451,7 +452,7 @@ export class ApplicationRef_ extends ApplicationRef {
       });
     });
 
-    const isStable = new Observable<boolean>((observer: Observer<boolean>) => {
+    const isStable = new EventEmitter<boolean>((observer: Observer<boolean>) => {
       const stableSub: Subscription = this._zone.onStable.subscribe(() => {
         NgZone.assertNotInAngularZone();
 

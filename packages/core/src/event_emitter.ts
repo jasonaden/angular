@@ -6,7 +6,12 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {Subject} from 'rxjs/Subject';
+import {Subscribable, Observable} from 'rxjs/Observable';
+import { Observer, PartialObserver } from 'rxjs/Observer';
+import {TeardownLogic, Subscription } from 'rxjs/Subscription';
+import {Subscriber} from "rxjs/Subscriber";
+
+function noop() {}
 
 /**
  * Use by directives and components to emit custom Events.
@@ -55,62 +60,47 @@ import {Subject} from 'rxjs/Subject';
  * Once a reference implementation of the spec is available, switch to it.
  * @stable
  */
-export class EventEmitter<T> extends Subject<T> {
-  // TODO: mark this as internal once all the facades are gone
-  // we can't mark it as internal now because EventEmitter exported via @angular/core would not
-  // contain this property making it incompatible with all the code that uses EventEmitter via
-  // facades, which are local to the code and do not have this property stripped.
-  // tslint:disable-next-line
-  __isAsync: boolean;
+export class EventEmitter<T> implements Subscribable<T> {
 
-  /**
-   * Creates an instance of {@link EventEmitter}, which depending on `isAsync`,
-   * delivers events synchronously or asynchronously.
-   *
-   * @param isAsync By default, events are delivered synchronously (default value: `false`).
-   * Set to `true` for asynchronous event delivery.
-   */
-  constructor(isAsync: boolean = false) {
-    super();
-    this.__isAsync = isAsync;
+  private nextObserver: null | ((value: T) => void);
+  private errorObserver: null | ((value: T) => void);
+  private completeObserver: null | (() => void);
+  private subscribeFn: null | ((observer: Observer<T>) => TeardownLogic);
+  private teardown: TeardownLogic | null;
+  private closed: boolean;
+  private add: boolean;
+
+  constructor(subscribe?: (observer: Observer<T>) => TeardownLogic) {
+    if (subscribe) {
+      this.subscribeFn = subscribe;
+    }
   }
 
-  emit(value?: T) { super.next(value); }
+  emit(value: T) { this.next(value); }
+  next(value: T) { this.nextObserver && this.nextObserver(value); }
+  error(err: any) {this.errorObserver && this.errorObserver(err); }
+  complete() {this.completeObserver && this.completeObserver(); }
 
-  subscribe(generatorOrNext?: any, error?: any, complete?: any): any {
-    let schedulerFn: (t: any) => any;
-    let errorFn = (err: any): any => null;
-    let completeFn = (): any => null;
+  subscribe(observerOrNext?: PartialObserver<T> | ((value: T) => void), error?: (error: any) => void, complete?: () => void): Subscription {
+    if (this.nextObserver) new Error('Only one subscription is supported.');
 
-    if (generatorOrNext && typeof generatorOrNext === 'object') {
-      schedulerFn = this.__isAsync ? (value: any) => {
-        setTimeout(() => generatorOrNext.next(value));
-      } : (value: any) => { generatorOrNext.next(value); };
+    let partial = observerOrNext && typeof observerOrNext == 'object' && observerOrNext;
+    this.nextObserver = partial && partial.next || observerOrNext as ((value: T) => void) || noop;
+    this.errorObserver = partial && partial.error || error || noop;
+    this.completeObserver = partial && partial.complete|| complete || noop;
 
-      if (generatorOrNext.error) {
-        errorFn = this.__isAsync ? (err) => { setTimeout(() => generatorOrNext.error(err)); } :
-                                   (err) => { generatorOrNext.error(err); };
-      }
-
-      if (generatorOrNext.complete) {
-        completeFn = this.__isAsync ? () => { setTimeout(() => generatorOrNext.complete()); } :
-                                      () => { generatorOrNext.complete(); };
-      }
-    } else {
-      schedulerFn = this.__isAsync ? (value: any) => { setTimeout(() => generatorOrNext(value)); } :
-                                     (value: any) => { generatorOrNext(value); };
-
-      if (error) {
-        errorFn =
-            this.__isAsync ? (err) => { setTimeout(() => error(err)); } : (err) => { error(err); };
-      }
-
-      if (complete) {
-        completeFn =
-            this.__isAsync ? () => { setTimeout(() => complete()); } : () => { complete(); };
-      }
+    if (this.subscribeFn) {
+      this.teardown = this.subscribeFn(this) || noop;
     }
 
-    return super.subscribe(schedulerFn, errorFn, completeFn);
+    let subscription = {
+      closed: false,
+      unsubscribe: () => {
+        subscription.closed = true;
+        this.teardown && (typeof this.teardown == 'object' ? this.teardown.unsubscribe() : this.teardown());
+        this.teardown = this.nextObserver = this.errorObserver = this.completeObserver = null;
+      }
+    };
+    return subscription as any;
   }
 }
