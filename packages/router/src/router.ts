@@ -600,18 +600,13 @@ export class Router {
         const redirectsApplied$ =
             applyRedirects(moduleInjector, this.configLoader, this.urlSerializer, url, this.config);
 
-        urlAndSnapshot$ = mergeMap.call(redirectsApplied$, (appliedUrl: UrlTree) => {
-          return map.call(
-              recognize(
-                  this.rootComponentType, this.config, appliedUrl, this.serializeUrl(appliedUrl)),
-              (snapshot: any) => {
-
-                this.routerEvents.next(new RoutesRecognized(
-                    id, this.serializeUrl(url), this.serializeUrl(appliedUrl), snapshot));
-
-                return {appliedUrl, snapshot};
-              });
-        });
+        urlAndSnapshot$ = mergeMap.call(redirectsApplied$, (appliedUrl: UrlTree) => map.call(
+          recognize(this.rootComponentType, this.config, appliedUrl, this.serializeUrl(appliedUrl)),
+          (snapshot: any) => {
+            const e = new RoutesRecognized(id, this.serializeUrl(url), this.serializeUrl(appliedUrl), snapshot);
+            this.triggerEvent(e);
+            return {appliedUrl, snapshot};
+          }));
       } else {
         urlAndSnapshot$ = of ({appliedUrl: url, snapshot: precreatedState});
       }

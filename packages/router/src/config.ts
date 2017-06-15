@@ -8,8 +8,12 @@
 
 import {NgModuleFactory, NgModuleRef, Type} from '@angular/core';
 import {Observable} from 'rxjs/Observable';
+import {Event} from './events';
 import {PRIMARY_OUTLET} from './shared';
 import {UrlSegment, UrlSegmentGroup} from './url_tree';
+import { PartialObserver } from "rxjs/Observer";
+import { Subscription } from "rxjs/Subscription";
+import { Subject } from "rxjs/Subject";
 
 /**
  * @whatItDoes Represents router configuration.
@@ -356,11 +360,23 @@ export interface Route {
   children?: Routes;
   loadChildren?: LoadChildren;
   runGuardsAndResolvers?: RunGuardsAndResolvers;
+  routeEventsSubscriber?: PartialObserver<Event> | ((next?: (value: Event) => void, error?: (error: any) => void, complete?: () => void) => Subscription);
   /**
    * Filled for routes with `loadChildren` once the module has been loaded
    * @internal
    */
   _loadedConfig?: LoadedRouterConfig;
+  /**
+   * Observable created when the config is loaded. This is only created if routeEventsSubscriber is 
+   * defined as this is the only way to subscribe to individual route-level events.
+   * @internal
+   */
+  _routeEvents?: Subject<Event>;
+  /**
+   * If a routeEventsSubscriber was provided, this internal property will contain the unsubscribe function.
+   * @internal
+   */
+  _routeEventsUnsubscribe?: Subscription;
 }
 
 export class LoadedRouterConfig {
