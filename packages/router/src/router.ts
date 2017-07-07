@@ -20,6 +20,7 @@ import {first} from 'rxjs/operator/first';
 import {map} from 'rxjs/operator/map';
 import {mergeMap} from 'rxjs/operator/mergeMap';
 import {reduce} from 'rxjs/operator/reduce';
+import {letProto} from 'rxjs/operator/let';
 
 import {applyRedirects} from './apply_redirects';
 import {LoadedRouterConfig, QueryParamsHandling, ResolveData, Route, Routes, RunGuardsAndResolvers, validateConfig} from './config';
@@ -169,7 +170,7 @@ function defaultErrorHandler(error: any): any {
 
 type NavigationSource = 'imperative' | 'popstate' | 'hashchange';
 
-type NavigationParams = {
+export type NavigationParams = {
   id: number,
   rawUrl: UrlTree,
   extras: NavigationExtras,
