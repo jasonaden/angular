@@ -152,7 +152,7 @@ class ApplyRedirects {
       segments: UrlSegment[], outlet: string,
       allowRedirects: boolean): Observable<UrlSegmentGroup> {
     const routes$ = of (...routes);
-    const processedRoutes$ = map.call(routes$, (r: any) => {
+    const processedRoutes$ = map.call(routes$, (r: Route) => {
       // To fix issue that PRIMARY_OUTLET is hardcoded so always no match
       const expanded$ = this.expandSegmentAgainstRoute(
           ngModule, segmentGroup, routes, r, segments, r.outlet || outlet, allowRedirects);

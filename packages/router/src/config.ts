@@ -396,7 +396,7 @@ function validateNode(route: Route, fullPath: string): void {
   if (!route.component && !route.loadChildren &&
       (route.outlet && route.outlet !== PRIMARY_OUTLET)) {
     throw new Error(
-        `Invalid configuration of route '${fullPath}': a named outlet should wether have component or loadChildren`);
+        `Invalid configuration of route '${fullPath}': a named outlet should either have component or loadChildren`);
   }
   if (route.redirectTo && route.children) {
     throw new Error(
