@@ -2849,7 +2849,7 @@ describe('Integration', () => {
                      `RouterModule.forRoot() called twice. Lazy loaded modules should use RouterModule.forChild() instead.`);
            })));
 
-    it('should combine routes from multiple modules into a single configuration',
+    fit('should combine routes from multiple modules into a single configuration',
        fakeAsync(inject(
            [Router, Location, NgModuleFactoryLoader],
            (router: Router, location: Location, loader: SpyNgModuleFactoryLoader) => {
@@ -2894,7 +2894,47 @@ describe('Integration', () => {
              router.navigateByUrl('/lazy2/loaded');
              advance(fixture);
              expect(location.path()).toEqual('/lazy2/loaded');
+             
            })));
+
+fit('should allow lazy loaded module in named outlet',
+    fakeAsync(inject([Router, NgModuleFactoryLoader], (router: Router, loader: SpyNgModuleFactoryLoader) => {
+        
+    @Component({selector: 'lazy', template: 'lazy-loaded'})
+    class LazyComponent {}
+
+    @NgModule({
+      declarations: [LazyComponent],
+      imports: [RouterModule.forChild([{path: 'lazy', component: LazyComponent}])]
+    })
+    class LazyLoadedModule {
+    }
+
+    loader.stubbedModules = {lazyModule: LazyLoadedModule};
+
+    const fixture = createRoot(router, RootCmp);
+
+    router.resetConfig([{
+      path: 'team/:id',
+      component: TeamCmp,
+      children: [
+        {path: 'user/:name', component: UserCmp},
+        {path: 'lazy', loadChildren: 'lazyModule', outlet: 'right'}
+      ]
+    }]);
+
+    
+    router.navigateByUrl('/team/22/user/john');
+    advance(fixture);
+
+    expect(fixture.nativeElement).toHaveText('team 22 [ user john, right:  ]');
+
+    router.navigateByUrl('/team/22/(user/john//right:lazy/lazy)');
+    advance(fixture);
+
+    expect(fixture.nativeElement).toHaveText('team 22 [ user john, right: lazy-loaded ]');
+    })));
+
 
 
     describe('should use the injector of the lazily-loaded configuration', () => {
