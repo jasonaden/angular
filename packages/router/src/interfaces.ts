@@ -10,7 +10,7 @@ import {Observable} from 'rxjs/Observable';
 
 import {Route} from './config';
 import {ActivatedRouteSnapshot, RouterStateSnapshot} from './router_state';
-
+import {UrlSegment} from './url_tree';
 
 /**
  * @whatItDoes Interface that a class can implement to be a guard deciding if a route can be
@@ -329,8 +329,8 @@ export interface Resolve<T> {
  * class CanLoadTeamSection implements CanLoad {
  *   constructor(private permissions: Permissions, private currentUser: UserToken) {}
  *
- *   canLoad(route: Route): Observable<boolean>|Promise<boolean>|boolean {
- *     return this.permissions.canLoadChildren(this.currentUser, route);
+ *   canLoad(route: Route, segments: UrlSegment[]): Observable<boolean>|Promise<boolean>|boolean {
+ *     return this.permissions.canLoadChildren(this.currentUser, segments[segments.length - 1].path);
  *   }
  * }
  *
@@ -367,7 +367,7 @@ export interface Resolve<T> {
  *   providers: [
  *     {
  *       provide: 'canLoadTeamSection',
- *       useValue: (route: Route) => true
+ *       useValue: (route: Route, segments: UrlSegment[]) => true
  *     }
  *   ]
  * })
@@ -376,4 +376,4 @@ export interface Resolve<T> {
  *
  * @stable
  */
-export interface CanLoad { canLoad(route: Route): Observable<boolean>|Promise<boolean>|boolean; }
+export interface CanLoad { canLoad(route: Route, segments: UrlSegment[]): Observable<boolean>|Promise<boolean>|boolean; }

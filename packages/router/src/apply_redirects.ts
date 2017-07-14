@@ -267,7 +267,7 @@ class ApplyRedirects {
     if (!matched) return noMatch(rawSegmentGroup);
 
     const rawSlicedSegments = segments.slice(lastChild);
-    const childConfig$ = this.getChildConfig(ngModule, route);
+    const childConfig$ = this.getChildConfig(ngModule, route, segments);
 
     return mergeMap.call(childConfig$, (routerConfig: LoadedRouterConfig) => {
       const childModule = routerConfig.module;
@@ -294,7 +294,7 @@ class ApplyRedirects {
     });
   }
 
-  private getChildConfig(ngModule: NgModuleRef<any>, route: Route): Observable<LoadedRouterConfig> {
+  private getChildConfig(ngModule: NgModuleRef<any>, route: Route, segments: UrlSegment[]): Observable<LoadedRouterConfig> {
     if (route.children) {
       // The children belong to the same module
       return of (new LoadedRouterConfig(route.children, ngModule));
@@ -306,7 +306,7 @@ class ApplyRedirects {
         return of (route._loadedConfig);
       }
 
-      return mergeMap.call(runCanLoadGuard(ngModule.injector, route), (shouldLoad: boolean) => {
+      return mergeMap.call(runCanLoadGuard(ngModule.injector, route, segments), (shouldLoad: boolean) => {
 
         if (shouldLoad) {
           return map.call(
@@ -413,13 +413,13 @@ class ApplyRedirects {
   }
 }
 
-function runCanLoadGuard(moduleInjector: Injector, route: Route): Observable<boolean> {
+function runCanLoadGuard(moduleInjector: Injector, route: Route, segments: UrlSegment[]): Observable<boolean> {
   const canLoad = route.canLoad;
   if (!canLoad || canLoad.length === 0) return of (true);
 
   const obs = map.call(from(canLoad), (injectionToken: any) => {
     const guard = moduleInjector.get(injectionToken);
-    return wrapIntoObservable(guard.canLoad ? guard.canLoad(route) : guard(route));
+    return wrapIntoObservable(guard.canLoad ? guard.canLoad(route, segments) : guard(route, segments));
   });
 
   return andObservables(obs);
