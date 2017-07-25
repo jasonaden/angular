@@ -265,8 +265,11 @@ export class ActivatedRouteSnapshot {
       /** The outlet name of the route */
       public outlet: string,
       /** The component of the route */
-      public component: Type<any>|string|null, routeConfig: Route|null, urlSegment: UrlSegmentGroup,
-      lastPathIndex: number, resolve: ResolveData) {
+      public component: Type<any>|string|null,
+      routeConfig: Route|null,
+      urlSegment: UrlSegmentGroup,
+      lastPathIndex: number,
+      resolve: ResolveData) {
     this._routeConfig = routeConfig;
     this._urlSegment = urlSegment;
     this._lastPathIndex = lastPathIndex;

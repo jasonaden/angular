@@ -219,19 +219,19 @@ export class ResolveEnd {
 
 /**
  * @whatItDoes Represents the start of end of the Resolve phase of routing. See note on
- * {@link ChildNavigationEnd} for use of this experimental API.
+ * {@link ChildActivationEnd} for use of this experimental API.
  *
  * @experimental
  */
-export class ChildNavigationStart {
+export class ChildActivationStart {
   constructor(
       /** @docsNotRequired */
       public id: number,
       /** @docsNotRequired */
-      public route: Route) {}
+      public routeConfig: Route) {}
 
   toString(): string {
-    return `ChildNavigationStart(id: ${this.id}, url: '${this.route.path}')`;
+    return `ChildActivationStart(id: ${this.id}, url: '${this.routeConfig.path}')`;
   }
 }
 
@@ -241,15 +241,15 @@ export class ChildNavigationStart {
  *
  * @experimental
  */
-export class ChildNavigationEnd {
+export class ChildActivationEnd {
   constructor(
       /** @docsNotRequired */
       public id: number,
       /** @docsNotRequired */
-      public route: Route) {}
+      public routeConfig: Route) {}
 
   toString(): string {
-    return `ChildNavigationEnd(id: ${this.id}, url: '${this.route.path}')`;
+    return `ChildActivationEnd(id: ${this.id}, url: '${this.routeConfig.path}')`;
   }
 }
 
@@ -276,4 +276,4 @@ export type Event = NavigationStart | NavigationEnd | NavigationCancel | Navigat
     RoutesRecognized | RouteConfigLoadStart | RouteConfigLoadEnd | GuardsCheckStart |
     GuardsCheckEnd | ResolveStart | ResolveEnd;
 
-export type RouteEvent = ChildNavigationStart | ChildNavigationEnd;
+export type RouteEvent = ChildActivationStart | ChildActivationEnd;

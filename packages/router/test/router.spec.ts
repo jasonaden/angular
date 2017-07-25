@@ -16,6 +16,7 @@ import {ActivatedRouteSnapshot, RouterStateSnapshot, createEmptyStateSnapshot} f
 import {DefaultUrlSerializer} from '../src/url_tree';
 import {TreeNode} from '../src/utils/tree';
 import {RouterTestingModule} from '../testing/src/router_testing_module';
+import { createActivatedRouteSnapshot, provideTokenLogger, Logger, createActivatedRouteSnapshot2 } from './helpers';
 
 describe('Router', () => {
   describe('resetRootComponentType', () => {
@@ -52,74 +53,132 @@ describe('Router', () => {
        }));
   });
 
-  describe('PreActivation', () => {
+  fdescribe('PreActivation', () => {
     const serializer = new DefaultUrlSerializer();
     const inj = {get: (token: any) => () => `${token}_value`};
     let empty: RouterStateSnapshot;
+    let logger: Logger;
 
-    beforeEach(() => { empty = createEmptyStateSnapshot(serializer.parse('/'), null !); });
+    const CA_CHILD = 'canActivate_child';
+    const CAC_CHILD = 'canActivateChild_child';
+    const CA_GRANDCHILD = 'canActivate_grandchild';
 
-    it('should resolve data', () => {
-      /**
-       * R  -->  R
-       *          \
-       *           a
-       */
-      const r = {data: 'resolver'};
-      const n = createActivatedRouteSnapshot('a', {resolve: r});
-      const s = new RouterStateSnapshot('url', new TreeNode(empty.root, [new TreeNode(n, [])]));
+    beforeEach(() => { 
+      TestBed.configureTestingModule({
+        providers: [
+          Logger, provideTokenLogger(CA_CHILD), provideTokenLogger(CAC_CHILD),
+          provideTokenLogger(CA_GRANDCHILD)]});
+      
+    });
 
-      checkResolveData(s, empty, inj, () => {
-        expect(s.root.firstChild !.data).toEqual({data: 'resolver_value'});
+    beforeEach(inject([Logger], (_logger: Logger) => { 
+      empty = createEmptyStateSnapshot(serializer.parse('/'), null !); 
+      logger = _logger;
+    }));
+    
+    describe('guards', () => {
+      it('should run CanActivate checks', () => {
+        /**
+         * R  -->  R
+         *          \
+         *           child (CanActivate: CA1, CanActivateChild CAC)
+         *            \
+         *             grandchild (CanActivate: CA2)
+         */
+
+        const childSnapshot = createActivatedRouteSnapshot2({
+          component: 'child', 
+          routeConfig: {
+            canActivate: [CA_CHILD],
+            canActivateChild: [CAC_CHILD]
+          }
+        });
+        const grandchildSnapshot = createActivatedRouteSnapshot2({
+          component: 'grandchild', 
+          routeConfig: {
+            canActivate: [CA_GRANDCHILD]
+          }
+        });
+        
+        const futureState = new RouterStateSnapshot('url', 
+          new TreeNode(empty.root, [
+            new TreeNode(childSnapshot, [
+              new TreeNode(grandchildSnapshot, [])
+            ])
+          ])
+        );
+        
+        checkGuards(futureState, empty, TestBed, (result) => {
+          expect(result).toBe(true);
+          expect(logger.logs).toEqual([CA_CHILD, CAC_CHILD, CA_GRANDCHILD]);
+        });
       });
     });
 
-    it('should wait for the parent resolve to complete', () => {
-      /**
-       * R  -->  R
-       *          \
-       *           null (resolve: parentResolve)
-       *            \
-       *             b (resolve: childResolve)
-       */
-      const parentResolve = {data: 'resolver'};
-      const childResolve = {};
+    describe('resolve', () => {
 
-      const parent = createActivatedRouteSnapshot(null !, {resolve: parentResolve});
-      const child = createActivatedRouteSnapshot('b', {resolve: childResolve});
+      it('should resolve data', () => {
+        /**
+         * R  -->  R
+         *          \
+         *           a
+         */
+        const r = {data: 'resolver'};
+        const n = createActivatedRouteSnapshot('a', {resolve: r});
+        const s = new RouterStateSnapshot('url', new TreeNode(empty.root, [new TreeNode(n, [])]));
 
-      const s = new RouterStateSnapshot(
-          'url', new TreeNode(empty.root, [new TreeNode(parent, [new TreeNode(child, [])])]));
-
-      const inj = {get: (token: any) => () => Promise.resolve(`${token}_value`)};
-
-      checkResolveData(s, empty, inj, () => {
-        expect(s.root.firstChild !.firstChild !.data).toEqual({data: 'resolver_value'});
+        checkResolveData(s, empty, inj, () => {
+          expect(s.root.firstChild !.data).toEqual({data: 'resolver_value'});
+        });
       });
-    });
 
-    it('should copy over data when creating a snapshot', () => {
-      /**
-       * R  -->  R         -->         R
-       *          \                     \
-       *           n1 (resolve: r1)      n21 (resolve: r1)
-       *                                  \
-       *                                   n22 (resolve: r2)
-       */
-      const r1 = {data: 'resolver1'};
-      const r2 = {data: 'resolver2'};
+      it('should wait for the parent resolve to complete', () => {
+        /**
+         * R  -->  R
+         *          \
+         *           null (resolve: parentResolve)
+         *            \
+         *             b (resolve: childResolve)
+         */
+        const parentResolve = {data: 'resolver'};
+        const childResolve = {};
 
-      const n1 = createActivatedRouteSnapshot('a', {resolve: r1});
-      const s1 = new RouterStateSnapshot('url', new TreeNode(empty.root, [new TreeNode(n1, [])]));
-      checkResolveData(s1, empty, inj, () => {});
+        const parent = createActivatedRouteSnapshot(null !, {resolve: parentResolve});
+        const child = createActivatedRouteSnapshot('b', {resolve: childResolve});
 
-      const n21 = createActivatedRouteSnapshot('a', {resolve: r1});
-      const n22 = createActivatedRouteSnapshot('b', {resolve: r2});
-      const s2 = new RouterStateSnapshot(
-          'url', new TreeNode(empty.root, [new TreeNode(n21, [new TreeNode(n22, [])])]));
-      checkResolveData(s2, s1, inj, () => {
-        expect(s2.root.firstChild !.data).toEqual({data: 'resolver1_value'});
-        expect(s2.root.firstChild !.firstChild !.data).toEqual({data: 'resolver2_value'});
+        const s = new RouterStateSnapshot(
+            'url', new TreeNode(empty.root, [new TreeNode(parent, [new TreeNode(child, [])])]));
+
+        const inj = {get: (token: any) => () => Promise.resolve(`${token}_value`)};
+
+        checkResolveData(s, empty, inj, () => {
+          expect(s.root.firstChild !.firstChild !.data).toEqual({data: 'resolver_value'});
+        });
+      });
+
+      it('should copy over data when creating a snapshot', () => {
+        /**
+         * R  -->  R         -->         R
+         *          \                     \
+         *           n1 (resolve: r1)      n21 (resolve: r1)
+         *                                  \
+         *                                   n22 (resolve: r2)
+         */
+        const r1 = {data: 'resolver1'};
+        const r2 = {data: 'resolver2'};
+
+        const n1 = createActivatedRouteSnapshot('a', {resolve: r1});
+        const s1 = new RouterStateSnapshot('url', new TreeNode(empty.root, [new TreeNode(n1, [])]));
+        checkResolveData(s1, empty, inj, () => {});
+
+        const n21 = createActivatedRouteSnapshot('a', {resolve: r1});
+        const n22 = createActivatedRouteSnapshot('b', {resolve: r2});
+        const s2 = new RouterStateSnapshot(
+            'url', new TreeNode(empty.root, [new TreeNode(n21, [new TreeNode(n22, [])])]));
+        checkResolveData(s2, s1, inj, () => {
+          expect(s2.root.firstChild !.data).toEqual({data: 'resolver1_value'});
+          expect(s2.root.firstChild !.firstChild !.data).toEqual({data: 'resolver2_value'});
+        });
       });
     });
   });
@@ -132,8 +191,11 @@ function checkResolveData(
   p.resolveData().subscribe(check, (e) => { throw e; });
 }
 
-function createActivatedRouteSnapshot(cmp: string, extra: any = {}): ActivatedRouteSnapshot {
-  return new ActivatedRouteSnapshot(
-      <any>[], {}, <any>null, <any>null, <any>null, <any>null, <any>cmp, <any>{}, <any>null, -1,
-      extra.resolve);
+function checkGuards(future: RouterStateSnapshot, curr: RouterStateSnapshot,
+  injector: any, check: (result: boolean) => void): void {
+  const p = new PreActivation(future, curr, injector);
+  p.initalize(new ChildrenOutletContexts());
+  console.log((p as any).canActivateChecks)
+  console.log((p as any).canDeactivateChecks)
+  p.checkGuards().subscribe(check, (e) => { throw e; });
 }
