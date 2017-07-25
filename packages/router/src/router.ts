@@ -626,18 +626,18 @@ export class Router {
       // run preactivation: guards and data resolvers
       let preActivation: PreActivation;
 
-      const preactivationTraverse$ = map.call(
+      const preactivationSetup$ = map.call(
           beforePreactivationDone$,
           ({appliedUrl, snapshot}: {appliedUrl: string, snapshot: RouterStateSnapshot}) => {
             const moduleInjector = this.ngModule.injector;
             preActivation =
                 new PreActivation(snapshot, this.currentRouterState.snapshot, moduleInjector);
-            preActivation.traverse(this.rootContexts);
+            preActivation.initalize(this.rootContexts);
             return {appliedUrl, snapshot};
           });
 
       const preactivationCheckGuards$ = mergeMap.call(
-          preactivationTraverse$,
+          preactivationSetup$,
           ({appliedUrl, snapshot}: {appliedUrl: string, snapshot: RouterStateSnapshot}) => {
             if (this.navigationId !== id) return of (false);
 
@@ -773,6 +773,9 @@ class CanDeactivate {
   constructor(public component: Object|null, public route: ActivatedRouteSnapshot) {}
 }
 
+/**
+ * This class bundles the actions involved in preactivation of a route.
+ */
 export class PreActivation {
   private canActivateChecks: CanActivate[] = [];
   private canDeactivateChecks: CanDeactivate[] = [];
@@ -781,10 +784,10 @@ export class PreActivation {
       private future: RouterStateSnapshot, private curr: RouterStateSnapshot,
       private moduleInjector: Injector) {}
 
-  traverse(parentContexts: ChildrenOutletContexts): void {
+  initalize(parentContexts: ChildrenOutletContexts): void {
     const futureRoot = this.future._root;
     const currRoot = this.curr ? this.curr._root : null;
-    this.traverseChildRoutes(futureRoot, currRoot, parentContexts, [futureRoot.value]);
+    this.setupChildRouteGuards(futureRoot, currRoot, parentContexts, [futureRoot.value]);
   }
 
   // TODO(jasonaden): Refactor checkGuards and resolveData so they can collect the checks
@@ -813,14 +816,19 @@ export class PreActivation {
 
   isActivating(): boolean { return this.canActivateChecks.length !== 0; }
 
-  private traverseChildRoutes(
+
+  /**
+   * Iterates over child routes and calls recursive `setupRouteGuards` to get `this` instance in
+   * proper state to run `checkGuards()` method.
+   */
+  private setupChildRouteGuards(
       futureNode: TreeNode<ActivatedRouteSnapshot>, currNode: TreeNode<ActivatedRouteSnapshot>|null,
       contexts: ChildrenOutletContexts|null, futurePath: ActivatedRouteSnapshot[]): void {
     const prevChildren = nodeChildrenAsMap(currNode);
 
     // Process the children of the future route
     futureNode.children.forEach(c => {
-      this.traverseRoutes(c, prevChildren[c.value.outlet], contexts, futurePath.concat([c.value]));
+      this.setupRouteGuards(c, prevChildren[c.value.outlet], contexts, futurePath.concat([c.value]));
       delete prevChildren[c.value.outlet];
     });
 
@@ -830,7 +838,11 @@ export class PreActivation {
                           this.deactivateRouteAndItsChildren(v, contexts !.getContext(k)));
   }
 
-  private traverseRoutes(
+  /**
+   * Iterates over child routes and calls recursive `setupRouteGuards` to get `this` instance in
+   * proper state to run `checkGuards()` method.
+   */
+  private setupRouteGuards(
       futureNode: TreeNode<ActivatedRouteSnapshot>, currNode: TreeNode<ActivatedRouteSnapshot>,
       parentContexts: ChildrenOutletContexts|null, futurePath: ActivatedRouteSnapshot[]): void {
     const future = futureNode.value;
@@ -851,12 +863,12 @@ export class PreActivation {
 
       // If we have a component, we need to go through an outlet.
       if (future.component) {
-        this.traverseChildRoutes(
+        this.setupChildRouteGuards(
             futureNode, currNode, context ? context.children : null, futurePath);
 
         // if we have a componentless route, we recurse but keep the same outlet map.
       } else {
-        this.traverseChildRoutes(futureNode, currNode, parentContexts, futurePath);
+        this.setupChildRouteGuards(futureNode, currNode, parentContexts, futurePath);
       }
 
       if (shouldRunGuardsAndResolvers) {
@@ -871,11 +883,11 @@ export class PreActivation {
       this.canActivateChecks.push(new CanActivate(futurePath));
       // If we have a component, we need to go through an outlet.
       if (future.component) {
-        this.traverseChildRoutes(futureNode, null, context ? context.children : null, futurePath);
+        this.setupChildRouteGuards(futureNode, null, context ? context.children : null, futurePath);
 
         // if we have a componentless route, we recurse but keep the same outlet map.
       } else {
-        this.traverseChildRoutes(futureNode, null, parentContexts, futurePath);
+        this.setupChildRouteGuards(futureNode, null, parentContexts, futurePath);
       }
     }
   }

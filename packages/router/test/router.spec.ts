@@ -60,6 +60,11 @@ describe('Router', () => {
     beforeEach(() => { empty = createEmptyStateSnapshot(serializer.parse('/'), null !); });
 
     it('should resolve data', () => {
+      /**
+       * R  -->  R
+       *          \
+       *           a
+       */
       const r = {data: 'resolver'};
       const n = createActivatedRouteSnapshot('a', {resolve: r});
       const s = new RouterStateSnapshot('url', new TreeNode(empty.root, [new TreeNode(n, [])]));
@@ -70,6 +75,13 @@ describe('Router', () => {
     });
 
     it('should wait for the parent resolve to complete', () => {
+      /**
+       * R  -->  R
+       *          \
+       *           null (resolve: parentResolve)
+       *            \
+       *             b (resolve: childResolve)
+       */
       const parentResolve = {data: 'resolver'};
       const childResolve = {};
 
@@ -87,6 +99,13 @@ describe('Router', () => {
     });
 
     it('should copy over data when creating a snapshot', () => {
+      /**
+       * R  -->  R         -->         R
+       *          \                     \
+       *           n1 (resolve: r1)      n21 (resolve: r1)
+       *                                  \
+       *                                   n22 (resolve: r2)
+       */
       const r1 = {data: 'resolver1'};
       const r2 = {data: 'resolver2'};
 
@@ -109,7 +128,7 @@ describe('Router', () => {
 function checkResolveData(
     future: RouterStateSnapshot, curr: RouterStateSnapshot, injector: any, check: any): void {
   const p = new PreActivation(future, curr, injector);
-  p.traverse(new ChildrenOutletContexts());
+  p.initalize(new ChildrenOutletContexts());
   p.resolveData().subscribe(check, (e) => { throw e; });
 }
 
