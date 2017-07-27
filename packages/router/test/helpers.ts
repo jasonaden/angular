@@ -8,12 +8,15 @@ import {PRIMARY_OUTLET, ParamMap, Params, convertToParamMap} from '../src/shared
 export class Logger {
   logs: string[] = [];
   add(thing: string) { this.logs.push(thing); }
+  empty() {
+    this.logs.length = 0;
+  }
 }
 
-export function provideTokenLogger(token: string) {
+export function provideTokenLogger(token: string, returnValue = true) {
   return {
     provide: token,
-    useFactory: (logger: Logger) => () => (logger.add(token), true),
+    useFactory: (logger: Logger) => () => (logger.add(token), returnValue),
     deps: [Logger]
   };
 };

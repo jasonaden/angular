@@ -13,7 +13,7 @@ import {of } from 'rxjs/observable/of';
 import {concatAll} from 'rxjs/operator/concatAll';
 import {every} from 'rxjs/operator/every';
 import * as l from 'rxjs/operator/last';
-import {map} from 'rxjs/operator/map';
+import {map as map$} from 'rxjs/operator/map';
 import {mergeAll} from 'rxjs/operator/mergeAll';
 import {PRIMARY_OUTLET} from '../shared';
 
@@ -41,16 +41,63 @@ export function shallowEqual(a: {[x: string]: any}, b: {[x: string]: any}): bool
   return true;
 }
 
+/**
+ * Flattens single-level nested arrays.
+ */
 export function flatten<T>(arr: T[][]): T[] {
   return Array.prototype.concat.apply([], arr);
 }
 
+/**
+ * Return the last element of an array.
+ */
 export function last<T>(a: T[]): T|null {
   return a.length > 0 ? a[a.length - 1] : null;
 }
 
+/**
+ * Verifys all booleans in an array are `true`.
+ */
 export function and(bools: boolean[]): boolean {
   return !bools.some(v => !v);
+}
+
+/**
+ * Maps one value to the return of a callback.
+ */
+export function map<A, B>(fn: (a: A) => B) {
+  return (a: A) => {
+    return fn(a);
+  }
+}
+
+export function compose<A, B>(
+  fnA: (a: A) => B
+): (x: A) => B;
+export function compose<A, B, C>(
+  fnA: (a: A) => B,
+  fnB: (b: B) => C
+): (x: A) => C;
+export function compose<A, B, C, D>(
+  fnA: (a: A) => B,
+  fnB: (b: B) => C,
+  fnC: (c: C) => D
+): (x: A) => D;
+export function compose<A, B, C, D, E>(
+  fnA: (a: A) => B,
+  fnB: (b: B) => C,
+  fnC: (c: C) => D,
+  fnE: (e: E) => E,
+): (x: A) => E;
+export function compose<A, B, C, D, E, F>(
+  fnA: (a: A) => B,
+  fnB: (b: B) => C,
+  fnC: (c: C) => D,
+  fnE: (e: E) => E,
+  fnF: (f: F) => F,
+): (x: A) => F;
+export function compose<T>(...fns: ((x: T) => T)[]): (x:T) => T {
+  return (x: T) => fns.reduce((prev, fn) => fn(prev), x);
 }
 
 export function forEach<K, V>(map: {[key: string]: V}, callback: (v: V, k: string) => void): void {
@@ -72,7 +119,7 @@ export function waitForMap<A, B>(
   const res: {[k: string]: B} = {};
 
   forEach(obj, (a: A, k: string) => {
-    const mapped = map.call(fn(k, a), (r: B) => res[k] = r);
+    const mapped = map$.call(fn(k, a), (r: B) => res[k] = r);
     if (k === PRIMARY_OUTLET) {
       waitHead.push(mapped);
     } else {
@@ -82,9 +129,13 @@ export function waitForMap<A, B>(
 
   const concat$ = concatAll.call(of (...waitHead, ...waitTail));
   const last$ = l.last.call(concat$);
-  return map.call(last$, () => res);
+  return map$.call(last$, () => res);
 }
 
+/**
+ * ANDs Observables by merging all input observables, reducing to an Observable verifying all
+ * input Observables return `true`.
+ */
 export function andObservables(observables: Observable<Observable<any>>): Observable<boolean> {
   const merged$ = mergeAll.call(observables);
   return every.call(merged$, (result: any) => result === true);

@@ -307,8 +307,14 @@ export interface CanDeactivate<T> {
  * @stable
  */
 export interface Resolve<T> {
-  resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<T>|Promise<T>|T;
+  resolve: Resolver<T>;
 }
+
+
+/**
+ * A type representing a resolver function.
+ */
+export type Resolver<T> = (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => Observable<T>|Promise<T>|T
 
 
 /**

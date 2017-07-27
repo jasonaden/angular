@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import {Observable} from 'rxjs/Observable';
 
 import {Route, UrlMatchResult} from './config';
 import {UrlSegment, UrlSegmentGroup} from './url_tree';

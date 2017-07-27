@@ -10,7 +10,8 @@ import {Location} from '@angular/common';
 import {TestBed, inject} from '@angular/core/testing';
 
 import {ResolveData} from '../src/config';
-import {PreActivation, Router} from '../src/router';
+import {Router} from '../src/router';
+import {PreActivation} from '../src/pre_activation';
 import {ChildrenOutletContexts} from '../src/router_outlet_context';
 import {ActivatedRouteSnapshot, RouterStateSnapshot, createEmptyStateSnapshot} from '../src/router_state';
 import {DefaultUrlSerializer} from '../src/url_tree';
@@ -18,7 +19,7 @@ import {TreeNode} from '../src/utils/tree';
 import {RouterTestingModule} from '../testing/src/router_testing_module';
 import { createActivatedRouteSnapshot, provideTokenLogger, Logger, createActivatedRouteSnapshot2 } from './helpers';
 
-describe('Router', () => {
+fdescribe('Router', () => {
   describe('resetRootComponentType', () => {
     class NewRootComponent {}
 
@@ -53,21 +54,31 @@ describe('Router', () => {
        }));
   });
 
-  fdescribe('PreActivation', () => {
+  describe('PreActivation', () => {
     const serializer = new DefaultUrlSerializer();
     const inj = {get: (token: any) => () => `${token}_value`};
     let empty: RouterStateSnapshot;
     let logger: Logger;
 
     const CA_CHILD = 'canActivate_child';
+    const CA_CHILD_FALSE = 'canActivate_child_false';
     const CAC_CHILD = 'canActivateChild_child';
+    const CAC_CHILD_FALSE = 'canActivateChild_child_false';
     const CA_GRANDCHILD = 'canActivate_grandchild';
+    const CA_GRANDCHILD_FALSE = 'canActivate_grandchild_false';
+    const CDA_CHILD = 'canDeactivate_child';
+    const CDA_CHILD_FALSE = 'canDeactivate_child_false';
+    const CDA_GRANDCHILD = 'canDeactivate_grandchild';
+    const CDA_GRANDCHILD_FALSE = 'canDeactivate_grandchild_false';
 
     beforeEach(() => { 
       TestBed.configureTestingModule({
         providers: [
-          Logger, provideTokenLogger(CA_CHILD), provideTokenLogger(CAC_CHILD),
-          provideTokenLogger(CA_GRANDCHILD)]});
+          Logger, provideTokenLogger(CA_CHILD), provideTokenLogger(CA_CHILD_FALSE, false),
+          provideTokenLogger(CAC_CHILD), provideTokenLogger(CAC_CHILD_FALSE, false),
+          provideTokenLogger(CA_GRANDCHILD), provideTokenLogger(CA_GRANDCHILD_FALSE, false),
+          provideTokenLogger(CDA_CHILD), provideTokenLogger(CDA_CHILD_FALSE, false),
+          provideTokenLogger(CDA_GRANDCHILD), provideTokenLogger(CDA_GRANDCHILD_FALSE, false)]});
       
     });
 
@@ -81,14 +92,15 @@ describe('Router', () => {
         /**
          * R  -->  R
          *          \
-         *           child (CanActivate: CA1, CanActivateChild CAC)
+         *           child (CA, CAC)
          *            \
-         *             grandchild (CanActivate: CA2)
+         *             grandchild (CA)
          */
 
         const childSnapshot = createActivatedRouteSnapshot2({
           component: 'child', 
           routeConfig: {
+
             canActivate: [CA_CHILD],
             canActivateChild: [CAC_CHILD]
           }
@@ -111,6 +123,241 @@ describe('Router', () => {
         checkGuards(futureState, empty, TestBed, (result) => {
           expect(result).toBe(true);
           expect(logger.logs).toEqual([CA_CHILD, CAC_CHILD, CA_GRANDCHILD]);
+        });
+      });
+      
+      it('should not run grandchild guards if child fails', () => {
+        /**
+         * R  -->  R
+         *          \
+         *           child (CA: x, CAC)
+         *            \
+         *             grandchild (CA)
+         */
+
+        const childSnapshot = createActivatedRouteSnapshot2({
+          component: 'child', 
+          routeConfig: {
+            canActivate: [CA_CHILD_FALSE],
+            canActivateChild: [CAC_CHILD]
+          }
+        });
+        const grandchildSnapshot = createActivatedRouteSnapshot2({
+          component: 'grandchild', 
+          routeConfig: {
+            canActivate: [CA_GRANDCHILD]
+          }
+        });
+        
+        const futureState = new RouterStateSnapshot('url', 
+          new TreeNode(empty.root, [
+            new TreeNode(childSnapshot, [
+              new TreeNode(grandchildSnapshot, [])
+            ])
+          ])
+        );
+        
+        checkGuards(futureState, empty, TestBed, (result) => {
+          expect(result).toBe(false);
+          expect(logger.logs).toEqual([CA_CHILD_FALSE]);
+        });
+      });
+
+      it('should not run grandchild guards if child canActivateChild fails', () => {
+        /**
+         * R  -->  R
+         *          \
+         *           child (CA, CAC: x)
+         *            \
+         *             grandchild (CA)
+         */
+
+        const childSnapshot = createActivatedRouteSnapshot2({
+          component: 'child', 
+          routeConfig: {
+            canActivate: [CA_CHILD],
+            canActivateChild: [CAC_CHILD_FALSE]
+          }
+        });
+        const grandchildSnapshot = createActivatedRouteSnapshot2({
+          component: 'grandchild', 
+          routeConfig: {
+            canActivate: [CA_GRANDCHILD]
+          }
+        });
+        
+        const futureState = new RouterStateSnapshot('url', 
+          new TreeNode(empty.root, [
+            new TreeNode(childSnapshot, [
+              new TreeNode(grandchildSnapshot, [])
+            ])
+          ])
+        );
+        
+        checkGuards(futureState, empty, TestBed, (result) => {
+          expect(result).toBe(false);
+          expect(logger.logs).toEqual([CA_CHILD, CAC_CHILD_FALSE]);
+        });
+      });
+
+      it('should run deactivate guards before activate guards', () => {
+        /**
+         *      R  -->  R
+         *     /         \
+         *    prev (CDA)  child (CA)
+         *                 \
+         *                  grandchild (CA)
+         */
+
+        const prevSnapshot = createActivatedRouteSnapshot2({
+          component: 'prev',
+          routeConfig: {
+            canDeactivate: [CDA_CHILD]
+          }
+        })
+        const childSnapshot = createActivatedRouteSnapshot2({
+          component: 'child', 
+          routeConfig: {
+            canActivate: [CA_CHILD],
+            canActivateChild: [CAC_CHILD]
+          }
+        });
+        const grandchildSnapshot = createActivatedRouteSnapshot2({
+          component: 'grandchild', 
+          routeConfig: {
+            canActivate: [CA_GRANDCHILD]
+          }
+        });
+        
+        const currentState = new RouterStateSnapshot('prev', 
+          new TreeNode(empty.root, [
+            new TreeNode(prevSnapshot, [])
+          ])
+        );
+
+        const futureState = new RouterStateSnapshot('url', 
+          new TreeNode(empty.root, [
+            new TreeNode(childSnapshot, [
+              new TreeNode(grandchildSnapshot, [])
+            ])
+          ])
+        );
+        
+        checkGuards(futureState, currentState, TestBed, (result) => {
+          expect(logger.logs).toEqual([CDA_CHILD, CA_CHILD, CAC_CHILD, CA_GRANDCHILD]);
+          // expect(result).toBe(true);
+          expect(logger.logs).toEqual([CDA_CHILD, CA_CHILD, CAC_CHILD, CA_GRANDCHILD]);
+        });
+      });
+
+      it('should not run activate if deactivate fails guards', () => {
+        /**
+         *      R  -->  R
+         *     /         \
+         *    prev (CDA)  child (CA)
+         *                 \
+         *                  grandchild (CA)
+         */
+
+        const prevSnapshot = createActivatedRouteSnapshot2({
+          component: 'prev',
+          routeConfig: {
+            canDeactivate: [CDA_CHILD_FALSE]
+          }
+        })
+        const childSnapshot = createActivatedRouteSnapshot2({
+          component: 'child', 
+          routeConfig: {
+            canActivate: [CA_CHILD],
+            canActivateChild: [CAC_CHILD]
+          }
+        });
+        const grandchildSnapshot = createActivatedRouteSnapshot2({
+          component: 'grandchild', 
+          routeConfig: {
+            canActivate: [CA_GRANDCHILD]
+          }
+        });
+        
+        const currentState = new RouterStateSnapshot('prev', 
+          new TreeNode(empty.root, [
+            new TreeNode(prevSnapshot, [])
+          ])
+        );
+
+        const futureState = new RouterStateSnapshot('url', 
+          new TreeNode(empty.root, [
+            new TreeNode(childSnapshot, [
+              new TreeNode(grandchildSnapshot, [])
+            ])
+          ])
+        );
+        
+        checkGuards(futureState, currentState, TestBed, (result) => {
+          expect(result).toBe(false);
+          expect(logger.logs).toEqual([CDA_CHILD_FALSE]);
+        });
+      });
+      it('deactivations from bottom up, then activations top down', () => {
+        /**
+         *      R     -->      R
+         *     /                \
+         *    prevChild (CDA)    child (CA)
+         *   /                    \
+         *  prevGrandchild(CDA)    grandchild (CA)
+         */
+
+        const prevChildSnapshot = createActivatedRouteSnapshot2({
+          component: 'prev_child',
+          routeConfig: {
+            canDeactivate: [CDA_CHILD]
+          }
+        })
+        const prevGrandchildSnapshot = createActivatedRouteSnapshot2({
+          component: 'prev_grandchild', 
+          routeConfig: {
+            canDeactivate: [CDA_GRANDCHILD]
+          }
+        });
+        const childSnapshot = createActivatedRouteSnapshot2({
+          component: 'child', 
+          routeConfig: {
+            canActivate: [CA_CHILD],
+            canActivateChild: [CAC_CHILD]
+          }
+        });
+        const grandchildSnapshot = createActivatedRouteSnapshot2({
+          component: 'grandchild', 
+          routeConfig: {
+            canActivate: [CA_GRANDCHILD]
+          }
+        });
+        
+        const currentState = new RouterStateSnapshot('prev', 
+          new TreeNode(empty.root, [
+            new TreeNode(prevChildSnapshot, [
+              new TreeNode(prevGrandchildSnapshot, [])
+            ])
+          ])
+        );
+
+        const futureState = new RouterStateSnapshot('url', 
+          new TreeNode(empty.root, [
+            new TreeNode(childSnapshot, [
+              new TreeNode(grandchildSnapshot, [])
+            ])
+          ])
+        );
+        
+        checkGuards(futureState, currentState, TestBed, (result) => {
+          expect(result).toBe(true);
+          expect(logger.logs).toEqual([CDA_GRANDCHILD, CDA_CHILD, CA_CHILD, CAC_CHILD, CA_GRANDCHILD]);
+        });
+
+        logger.empty();
+        checkGuards(currentState, futureState, TestBed, (result) => {
+          expect(result).toBe(true);
+          expect(logger.logs).toEqual([]);
         });
       });
     });
@@ -195,7 +442,5 @@ function checkGuards(future: RouterStateSnapshot, curr: RouterStateSnapshot,
   injector: any, check: (result: boolean) => void): void {
   const p = new PreActivation(future, curr, injector);
   p.initalize(new ChildrenOutletContexts());
-  console.log((p as any).canActivateChecks)
-  console.log((p as any).canDeactivateChecks)
   p.checkGuards().subscribe(check, (e) => { throw e; });
 }
