@@ -26,7 +26,8 @@ PACKAGES=(core
   benchpress)
 
 NODE_PACKAGES=(compiler-cli
-  benchpress)
+  benchpress
+  tsc-wrapped)
 
 BUILD_ALL=true
 BUNDLE=true
@@ -108,77 +109,6 @@ containsElement () {
 }
 
 #######################################
-# Downlevel ES2015 to ESM/ES5
-# Arguments:
-#   param1 - Source folder
-#   param2 - Naming suffix to apply. Must end in ".ts" (defaults to .es5.ts)
-# Returns:
-#   None
-#######################################
-downlevelES2015() {
-  # Iterate over the files in this directory, converting to .es5.ts
-  regex="(.+).js"
-  for file in ${1}/*.js ; do
-    if [[ ${file} =~ $regex ]]; then
-      ts_file="${BASH_REMATCH[1]}${2:-".es5.ts"}"
-      cp ${file} ${ts_file}
-
-      echo "======           $TSC ${ts_file} --target es5 --module es2015 --noLib --sourceMap --importHelpers"
-      ($TSC ${ts_file} --target es5 --module es2015 --noLib --sourceMap --importHelpers) > /dev/null 2>&1 || true
-      mapSources "${BASH_REMATCH[1]}${2:-".es5.js"}"
-      rm -f ${ts_file}
-    fi
-  done
-
-  # Recurse for sub directories
-  for DIR in ${1}/* ; do
-    isIgnoredDirectory ${DIR} && continue
-    downlevelES2015 ${DIR}
-  done
-}
-
-#######################################
-# Rollup index files recursively, ignoring blacklisted directories
-# Arguments:
-#   param1 - Base source folder
-#   param2 - Destination directory
-#   param3 - Config file
-# Returns:
-#   None
-#######################################
-rollupIndex() {
-  # Iterate over the files in this directory, rolling up each into ${2} directory
-  local regex=".+/(.+)/index.js"
-  if [[ "${1}/index.js" =~ $regex ]]; then
-    in_file="${1}/index.js"
-    out_file="${2}/${BASH_REMATCH[1]}.js"
-
-    echo "======           $ROLLUP -i ${in_file} -o ${out_file}"
-
-    if [[ -f "${3}" ]]; then
-      $ROLLUP -i ${in_file} -o ${out_file} -c ${3} --sourcemap
-    else
-      $ROLLUP -i ${in_file} -o ${out_file} --sourcemap
-    fi
-    cat ${LICENSE_BANNER} > ${out_file}.tmp
-    cat ${out_file} >> ${out_file}.tmp
-    mv ${out_file}.tmp ${out_file}
-
-    mapSources "${out_file}"
-
-    # Recurse for sub directories
-    for DIR in ${1}/* ; do
-      isIgnoredDirectory ${DIR} && continue
-      # NOTE: We need to re-run this regex and use the new match as Bash doesn't have closures
-      if [[ "${1}/index.js" =~ $regex ]]; then
-        rollupIndex ${DIR} ${2}/${BASH_REMATCH[1]} "$(dirname $3)/${BASH_REMATCH[1]}/rollup.config.js"
-      fi
-    done
-  fi
-}
-
-
-#######################################
 # Recursively runs rollup on any entry point that has a "rollup.config.js" file
 # Arguments:
 #   param1 - Base source folder containing rollup.config.js
@@ -186,17 +116,11 @@ rollupIndex() {
 #   None
 #######################################
 runRollup() {
-  local regex="dest: ['\"](.+)['\"],*"
   if [[ -f "${1}/rollup.config.js" ]]; then
     cd ${1}
 
     echo "======           $ROLLUP -c ${1}/rollup.config.js"
     $ROLLUP -c rollup.config.js --sourcemap
-
-    local dest_line=$(cat "${1}/rollup.config.js" | grep 'dest:')
-    if [[ ${dest_line} =~ $regex ]]; then
-      mapSources "${BASH_REMATCH[1]}"
-    fi
 
     # Recurse for sub directories
     for DIR in ${1}/* ; do
@@ -241,7 +165,6 @@ minify() {
     if [[ "${base_file}" =~ $regex && "${base_file##*.}" != "map" ]]; then
       local out_file=$(dirname "${file}")/${BASH_REMATCH[1]}.min.js
       $UGLIFYJS -c --screw-ie8 --comments -o ${out_file} --source-map ${out_file}.map --source-map-include-sources ${file}
-      mapSources "${out_file}"
     fi
   done
 }
@@ -252,19 +175,18 @@ minify() {
 #   param1 - Source directory
 #   param2 - Out dir
 #   param3 - Package Name
-#   param4 - Is child (are we recursing?)
 # Returns:
 #   None
 #######################################
 compilePackage() {
   echo "======      [${3}]: COMPILING: ${NGC} -p ${1}/tsconfig-build.json"
   # For NODE_PACKAGES items (not getting rolled up)
-  if containsElement "${PACKAGE}" "${NODE_PACKAGES[@]}"; then
+  if containsElement "${3}" "${NODE_PACKAGES[@]}"; then
     $TSC -p ${1}/tsconfig-build.json
   else
     local package_name=$(basename "${2}")
     $NGC -p ${1}/tsconfig-build.json
-    echo "======           Create ${1}/../${package_name}.d.ts re-export file for Closure"
+    echo "======           Create ${1}/../${package_name}.d.ts re-export file for tsickle"
     echo "$(cat ${LICENSE_BANNER}) ${N} export * from './${package_name}/index'" > ${2}/../${package_name}.d.ts
     echo "{\"__symbolic\":\"module\",\"version\":3,\"metadata\":{},\"exports\":[{\"from\":\"./${package_name}/index\"}],\"flatModuleIndexRedirect\":true}" > ${2}/../${package_name}.metadata.json
   fi
@@ -274,24 +196,31 @@ compilePackage() {
     BASE_DIR=$(basename "${DIR}")
     # Skip over directories that are not nested entry points
     [[ -e ${DIR}/tsconfig-build.json && "${BASE_DIR}" != "integrationtest" ]] || continue
-    compilePackage ${DIR} ${2}/${BASE_DIR} ${3} true
+    compilePackage ${DIR} ${2}/${BASE_DIR} ${3}
   done
 }
 
 #######################################
-# Moves typings and metadata files appropriately
+# Recursively compile package
 # Arguments:
-#   param1 - Source of typings & metadata files
-#   param2 - Root of destination directory
-#   param3 - Package name (needed to correspond to name of d.ts and metadata.json files)
+#   param1 - Source directory
+#   param2 - Out dir
+#   param3 - Package Name
 # Returns:
 #   None
 #######################################
-moveTypings() {
-  if [[ -f ${1}/index.d.ts && -f ${1}/index.metadata.json ]]; then
-    mv ${1}/index.d.ts ${1}/${2}.d.ts
-    mv ${1}/index.metadata.json ${1}/${2}.metadata.json
-  fi
+compilePackageES5() {
+  echo "======      [${3}]: COMPILING: ${NGC} -p ${1}/tsconfig-build.json --target es5 -d false --outDir ${2} --importHelpers true --sourceMap"
+  local package_name=$(basename "${2}")
+  $NGC -p ${1}/tsconfig-build.json --target es5 -d false --outDir ${2} --importHelpers true --sourceMap
+
+  for DIR in ${1}/* ; do
+    [ -d "${DIR}" ] || continue
+    BASE_DIR=$(basename "${DIR}")
+    # Skip over directories that are not nested entry points
+    [[ -e ${DIR}/tsconfig-build.json && "${BASE_DIR}" != "integrationtest" ]] || continue
+    compilePackageES5 ${DIR} ${2} ${3}
+  done
 }
 
 #######################################
@@ -333,7 +262,7 @@ echo "====== BUILDING: Version ${VERSION}"
 N="
 "
 TSC=`pwd`/node_modules/.bin/tsc
-NGC="node --max-old-space-size=3000 dist/packages-dist/tsc-wrapped/src/main"
+NGC="node --max-old-space-size=3000 `pwd`/dist/packages-dist/tsc-wrapped/src/main"
 MAP_SOURCES="node `pwd`/scripts/build/map_sources.js "
 UGLIFYJS=`pwd`/node_modules/.bin/uglifyjs
 TSCONFIG=./tools/tsconfig.json
@@ -435,7 +364,8 @@ do
   ROOT_OUT_DIR=${PWD}/dist/packages
   OUT_DIR=${ROOT_OUT_DIR}/${PACKAGE}
   NPM_DIR=${PWD}/dist/packages-dist/${PACKAGE}
-  MODULES_DIR=${NPM_DIR}/@angular
+  ESM15_DIR=${NPM_DIR}/esm15
+  ESM5_DIR=${NPM_DIR}/esm5
   BUNDLES_DIR=${NPM_DIR}/bundles
 
   LICENSE_BANNER=${ROOT_DIR}/license-banner.txt
@@ -454,15 +384,14 @@ do
 
       echo "======        Copy ${PACKAGE} typings"
       rsync -a --exclude=*.js --exclude=*.js.map ${OUT_DIR}/ ${NPM_DIR}
-      moveTypings ${NPM_DIR} ${PACKAGE}
 
       (
         cd  ${SRC_DIR}
         echo "======         Rollup ${PACKAGE}"
-        rollupIndex ${OUT_DIR} ${MODULES_DIR} ${ROOT_DIR}
+        rsync -a --exclude=*.json --exclude=*.d.ts ${OUT_DIR}/ ${ESM15_DIR}
 
         echo "======         Downleveling ES2015 to ESM/ES5"
-        downlevelES2015 ${MODULES_DIR}
+        compilePackageES5 ${SRC_DIR} ${ESM5_DIR} ${PACKAGE}
 
         echo "======         Run rollup conversions on ${PACKAGE}"
         runRollup ${SRC_DIR}
@@ -477,7 +406,7 @@ do
 
     echo "======        Copy ${PACKAGE} package.json and .externs.js files"
     rsync -am --include="package.json" --include="*/" --exclude=* ${SRC_DIR}/ ${NPM_DIR}/
-    rsync -am --include="*.externs.js" --include="*/" --exclude=* ${SRC_DIR}/ ${NPM_DIR}/
+    rsync -am --include="*.externs.js" --include="*/" --exclude=* ${SRC_DIR}/ ${ESM15_DIR}/
 
     cp ${ROOT_DIR}/README.md ${NPM_DIR}/
   fi

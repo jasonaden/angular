@@ -7,6 +7,7 @@
  */
 
 import resolve from 'rollup-plugin-node-resolve';
+import sourcemaps from 'rollup-plugin-sourcemaps';
 
 const globals = {
   '@angular/core': 'ng.core',
@@ -19,13 +20,13 @@ const globals = {
 
 export default {
   entry:
-      '../../dist/packages-dist/platform-webworker-dynamic/@angular/platform-webworker-dynamic.es5.js',
+      '../../dist/packages-dist/platform-webworker-dynamic/esm5/index.js',
   dest:
       '../../dist/packages-dist/platform-webworker-dynamic/bundles/platform-webworker-dynamic.umd.js',
   format: 'umd',
   exports: 'named',
   moduleName: 'ng.platformWebworkerDynamic',
-  plugins: [resolve()],
+  plugins: [resolve(), sourcemaps()],
   external: Object.keys(globals),
   globals: globals
 };

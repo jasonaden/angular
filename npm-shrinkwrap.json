@@ -1,6 +1,6 @@
 {
   "name": "angular-srcs",
-  "version": "5.0.0-beta.0",
+  "version": "5.0.0-beta.1",
   "dependencies": {
     "@types/angularjs": {
       "version": "1.5.13-alpha",
@@ -321,6 +321,11 @@
       "version": "0.4.0",
       "from": "asynckit@>=0.4.0 <0.5.0",
       "resolved": "https://registry.npmjs.org/asynckit/-/asynckit-0.4.0.tgz"
+    },
+    "atob": {
+      "version": "2.0.3",
+      "from": "atob@>=2.0.0 <3.0.0",
+      "resolved": "https://registry.npmjs.org/atob/-/atob-2.0.3.tgz"
     },
     "aws-sign2": {
       "version": "0.6.0",
@@ -6944,6 +6949,11 @@
       "from": "resolve@>=1.1.4 <2.0.0",
       "resolved": "https://registry.npmjs.org/resolve/-/resolve-1.1.6.tgz"
     },
+    "resolve-url": {
+      "version": "0.2.1",
+      "from": "resolve-url@>=0.2.1 <0.3.0",
+      "resolved": "https://registry.npmjs.org/resolve-url/-/resolve-url-0.2.1.tgz"
+    },
     "response-time": {
       "version": "2.3.1",
       "from": "response-time@>=2.3.1 <2.4.0",
@@ -7027,6 +7037,28 @@
       "version": "3.0.0",
       "from": "rollup-plugin-node-resolve@latest",
       "resolved": "https://registry.npmjs.org/rollup-plugin-node-resolve/-/rollup-plugin-node-resolve-3.0.0.tgz"
+    },
+    "rollup-plugin-sourcemaps": {
+      "version": "0.4.2",
+      "from": "rollup-plugin-sourcemaps@latest",
+      "resolved": "https://registry.npmjs.org/rollup-plugin-sourcemaps/-/rollup-plugin-sourcemaps-0.4.2.tgz",
+      "dependencies": {
+        "estree-walker": {
+          "version": "0.3.1",
+          "from": "estree-walker@>=0.3.0 <0.4.0",
+          "resolved": "https://registry.npmjs.org/estree-walker/-/estree-walker-0.3.1.tgz"
+        },
+        "micromatch": {
+          "version": "2.3.11",
+          "from": "micromatch@>=2.3.11 <3.0.0",
+          "resolved": "https://registry.npmjs.org/micromatch/-/micromatch-2.3.11.tgz"
+        },
+        "rollup-pluginutils": {
+          "version": "2.0.1",
+          "from": "rollup-pluginutils@>=2.0.1 <3.0.0",
+          "resolved": "https://registry.npmjs.org/rollup-pluginutils/-/rollup-pluginutils-2.0.1.tgz"
+        }
+      }
     },
     "rollup-pluginutils": {
       "version": "1.5.2",
@@ -7345,6 +7377,11 @@
       "from": "source-map@latest",
       "resolved": "https://registry.npmjs.org/source-map/-/source-map-0.5.6.tgz"
     },
+    "source-map-resolve": {
+      "version": "0.5.0",
+      "from": "source-map-resolve@>=0.5.0 <0.6.0",
+      "resolved": "https://registry.npmjs.org/source-map-resolve/-/source-map-resolve-0.5.0.tgz"
+    },
     "source-map-support": {
       "version": "0.4.2",
       "from": "source-map-support@latest",
@@ -7363,6 +7400,11 @@
           }
         }
       }
+    },
+    "source-map-url": {
+      "version": "0.4.0",
+      "from": "source-map-url@>=0.4.0 <0.5.0",
+      "resolved": "https://registry.npmjs.org/source-map-url/-/source-map-url-0.4.0.tgz"
     },
     "sourcemap-codec": {
       "version": "1.3.0",
@@ -7963,6 +8005,11 @@
       "version": "1.1.2",
       "from": "upper-case-first@>=1.1.0 <2.0.0",
       "resolved": "https://registry.npmjs.org/upper-case-first/-/upper-case-first-1.1.2.tgz"
+    },
+    "urix": {
+      "version": "0.1.0",
+      "from": "urix@>=0.1.0 <0.2.0",
+      "resolved": "https://registry.npmjs.org/urix/-/urix-0.1.0.tgz"
     },
     "url": {
       "version": "0.10.3",

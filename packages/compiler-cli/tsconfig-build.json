@@ -1,12 +1,11 @@
 {
+  "extends": "../tsconfig-build.json",
+
   "compilerOptions": {
-    "baseUrl": ".",
-    "declaration": true,
-    "experimentalDecorators": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
     "module": "commonjs",
-    "outDir": "../../dist/packages/compiler-cli",
+    "target": "es5",
+    "baseUrl": ".",
+    "rootDir": ".",
     "paths": {
       "@angular/core": ["../../dist/packages/core"],
       "@angular/common": ["../../dist/packages/common"],
@@ -16,19 +15,13 @@
       "@angular/platform-browser": ["../../dist/packages/platform-browser"],
       "@angular/tsc-wrapped": ["../../dist/packages-dist/tsc-wrapped"]
     },
-    "rootDir": ".",
-    "sourceMap": true,
-    "inlineSources": true,
-    "target": "es5",
-    "lib": [
-      "es6",
-      "dom"
-    ],
-    "skipLibCheck": true
+    "outDir": "../../dist/packages/compiler-cli"
   },
+
   "exclude": [
     "integrationtest"
   ],
+
   "files": [
     "index.ts",
     "src/main.ts",
