@@ -189,6 +189,11 @@ function defaultRouterHook(snapshot: RouterStateSnapshot): Observable<void> {
 }
 
 /**
+ * @internal
+ */
+export type Hooks = {beforePreactivation: RouterHook, afterPreactivation: RouterHook, beforeActivation: any, afterActivation: any};
+
+/**
  * @whatItDoes Provides the navigation and url manipulation capabilities.
  *
  * See {@link Routes} for more details and examples.
@@ -229,9 +234,11 @@ export class Router {
    * pause the navigation either before preactivation or after it.
    * @internal
    */
-  hooks: {beforePreactivation: RouterHook, afterPreactivation: RouterHook} = {
+  hooks: Hooks = {
     beforePreactivation: defaultRouterHook,
-    afterPreactivation: defaultRouterHook
+    afterPreactivation: defaultRouterHook,
+    beforeActivation: defaultRouterHook,
+    afterActivation: defaultRouterHook
   };
 
   /**
@@ -533,7 +540,7 @@ export class Router {
     let resolve: any = null;
     let reject: any = null;
 
-    const promise = new Promise<boolean>((res, rej) => {
+    const promise = new Promise((res, rej) => {
       resolve = res;
       reject = rej;
     });
@@ -713,7 +720,8 @@ export class Router {
             }
 
             new ActivateRoutes(
-                this.routeReuseStrategy, state, storedState, (evt: Event) => this.triggerEvent(evt))
+                this.routeReuseStrategy, state, storedState, (evt: Event) => this.triggerEvent(evt),
+                this.hooks)
                 .activate(this.rootContexts);
 
             navigationIsSuccessful = true;
@@ -764,7 +772,7 @@ export class Router {
 class ActivateRoutes {
   constructor(
       private routeReuseStrategy: RouteReuseStrategy, private futureState: RouterState,
-      private currState: RouterState, private forwardEvent: (evt: RouteEvent) => void) {}
+      private currState: RouterState, private forwardEvent: (evt: RouteEvent) => void, public hooks: Hooks) {}
 
   activate(parentContexts: ChildrenOutletContexts): void {
     const futureRoot = this.futureState._root;
@@ -880,8 +888,10 @@ class ActivateRoutes {
     // reusing the node
     if (future === curr) {
       if (future.component) {
+        this.hooks.beforeActivation(future.snapshot, true /* reuse */);
         // If we have a normal route, we need to go through an outlet.
         const context = parentContexts.getOrCreateContext(future.outlet);
+        this.hooks.afterActivation(future.snapshot);
         this.activateChildRoutes(futureNode, currNode, context.children);
       } else {
         // if we have a componentless route, we recurse but keep the same outlet map.
@@ -889,8 +899,10 @@ class ActivateRoutes {
       }
     } else {
       if (future.component) {
+        this.hooks.beforeActivation(future.snapshot, false /* reuse */);
         // if we have a normal route, we need to place the component into the outlet and recurse.
         const context = parentContexts.getOrCreateContext(future.outlet);
+        this.hooks.afterActivation(future.snapshot);
 
         if (this.routeReuseStrategy.shouldAttach(future.snapshot)) {
           const stored =
