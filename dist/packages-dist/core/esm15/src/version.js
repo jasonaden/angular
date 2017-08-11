@@ -1,0 +1,41 @@
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * \@whatItDoes Represents the version of Angular
+ *
+ * \@stable
+ */
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */ export class Version {
+    /**
+     * @param {?} full
+     */
+    constructor(full) {
+        this.full = full;
+    }
+    /**
+     * @return {?}
+     */
+    get major() { return this.full.split('.')[0]; }
+    /**
+     * @return {?}
+     */
+    get minor() { return this.full.split('.')[1]; }
+    /**
+     * @return {?}
+     */
+    get patch() { return this.full.split('.').slice(2).join('.'); }
+}
+function Version_tsickle_Closure_declarations() {
+    /** @type {?} */
+    Version.prototype.full;
+}
+/**
+ * \@stable
+ */
+export const /** @type {?} */ VERSION = new Version('5.0.0-beta.3-14502f5b34');
+//# sourceMappingURL=version.js.map
