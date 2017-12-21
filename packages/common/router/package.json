@@ -1,0 +1,7 @@
+{
+  "name": "@angular/common/router",
+  "typings": "./router.d.ts",
+  "main": "../bundles/common-router.umd.js",
+  "module": "../esm5/router.js",
+  "es2015": "../esm2015/router.js"
+}
