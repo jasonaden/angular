@@ -10,7 +10,7 @@ import {RouterStore, RouterState, getConfig} from '../src/router_store';
 import {RouteConfig} from '../src/config';
 import {Params} from '../src/shared';
 
-fdescribe('RouterStore', () => {
+describe('RouterStore', () => {
   let state: RouterState;
   let store: RouterStore;
   const root: RouterState = {configToId: [], configs: {}};

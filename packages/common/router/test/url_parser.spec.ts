@@ -52,6 +52,12 @@ fdescribe('UrlParser', () => {
     it('should return an empty object for empty query params', () => {
       const params = parseQueryParams('');
       expect(params).toEqual({});
-    })
+    });
+
+    it('should handle multiple query params of the same name into an array', () => {
+      const params = parseQueryParams('a=foo&a=bar&a=swaz');
+      expect(params).toEqual({a: ['foo', 'bar', 'swaz']});
+      expect(params['a']).toEqual(['foo', 'bar', 'swaz']);
+    });
   });
 });
