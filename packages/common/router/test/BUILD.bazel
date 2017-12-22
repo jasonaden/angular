@@ -1,19 +1,28 @@
 package(default_visibility = ["//visibility:public"])
 
 load("@build_bazel_rules_typescript//:defs.bzl", "ts_library")
+load("@build_bazel_rules_nodejs//:defs.bzl", "jasmine_node_test")
 
 ts_library(
-    name = "router",
+    name = "test_lib",
     srcs = glob(
         [
             "*.ts",
-            "src/**/*.ts",
         ],
     ),
-    module_name = "@angular/common/router",
     tsconfig = "//packages:tsconfig",
     deps = [
-        "//packages/core",
+        "//packages/common/router",
+        "//packages:types",
         "@rxjs",
+    ],
+    testonly = 1,
+)
+
+jasmine_node_test(
+    name = "test",
+    srcs = [],
+    deps = [
+        ":test_lib",
     ],
 )
