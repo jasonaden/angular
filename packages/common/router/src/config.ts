@@ -25,3 +25,28 @@ export interface RouteConfig {
    */
   // _loadedConfig?: LoadedRouterConfig;
 }
+
+export interface NormalizedRouteConfig {
+  id: number;
+  children: number[];
+  path?: string;
+  pathMatch?: string;
+  redirectTo?: string;
+  outlet?: string;
+  // loadChildren?: (() => Promise<Type<any>>);
+  // matcher?: UrlMatcher;
+  // component?: Type<any>;
+  // canActivate?: any[];
+  // canActivateChild?: any[];
+  // canDeactivate?: any[];
+  // canLoad?: any[];
+  // data?: Data;
+  // resolve?: ResolveData;
+  // loadChildren?: LoadChildren;
+  // runGuardsAndResolvers?: RunGuardsAndResolvers;
+  /**
+   * Filled for routes with `loadChildren` once the module has been loaded
+   * @internal
+   */
+  // _loadedConfig?: LoadedRouterConfig;
+}
