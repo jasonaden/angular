@@ -1,6 +1,7 @@
 
 import {Params} from './shared';
 import {RouteConfig, NormalizedRouteConfig} from './config';
+import {BaseStore} from './base_store';
 
 export interface RouterState {
   configToId: [RouteConfig, number][],
@@ -9,19 +10,7 @@ export interface RouterState {
   }
 }
 
-export class RouterStore {
-  private _nextId = 0;
-  constructor(private state: RouterState) {
-
-  }
-
-  getState() {
-    return this.state;
-  }
-
-  private nextId() {
-    return ++this._nextId;
-  }
+export class RouterStore extends BaseStore<RouterState> {
 
   addConfig(config: RouteConfig): number {
     const id = this.nextId();
