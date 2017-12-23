@@ -6,9 +6,116 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {parseUrl, getParams, parseQueryParams} from '../src/url_parser';
+import {getParams, parseUrl, parseUrlPath, parseQueryParams} from '../src/url_parser';
 
 fdescribe('UrlParser', () => {
+  describe('parseUrlPath', () => {
+    it('should parse the root url', () => {
+      const path = parseUrlPath('/');
+      expect(path).toEqual('/');
+    });
+
+    // it('should parse non-empty urls', () => {
+    //   const tree = url.parse('one/two');
+    //   expectSegment(tree.root.children[PRIMARY_OUTLET], 'one/two');
+    //   expect(url.serialize(tree)).toEqual('/one/two');
+    // });
+
+    // it('should parse multiple secondary segments', () => {
+    //   const tree = url.parse('/one/two(left:three//right:four)');
+
+    //   expectSegment(tree.root.children[PRIMARY_OUTLET], 'one/two');
+    //   expectSegment(tree.root.children['left'], 'three');
+    //   expectSegment(tree.root.children['right'], 'four');
+
+    //   expect(url.serialize(tree)).toEqual('/one/two(left:three//right:four)');
+    // });
+
+    // it('should parse top-level nodes with only secondary segment', () => {
+    //   const tree = url.parse('/(left:one)');
+
+    //   expect(tree.root.numberOfChildren).toEqual(1);
+    //   expectSegment(tree.root.children['left'], 'one');
+
+    //   expect(url.serialize(tree)).toEqual('/(left:one)');
+    // });
+
+    // it('should parse nodes with only secondary segment', () => {
+    //   const tree = url.parse('/one/(left:two)');
+
+    //   const one = tree.root.children[PRIMARY_OUTLET];
+    //   expectSegment(one, 'one', true);
+    //   expect(one.numberOfChildren).toEqual(1);
+    //   expectSegment(one.children['left'], 'two');
+
+    //   expect(url.serialize(tree)).toEqual('/one/(left:two)');
+    // });
+
+    // it('should not parse empty path segments with params', () => {
+    //   expect(() => url.parse('/one/two/(;a=1//right:;b=2)'))
+    //       .toThrowError(/Empty path url segment cannot have parameters/);
+    // });
+
+    // it('should parse scoped secondary segments', () => {
+    //   const tree = url.parse('/one/(two//left:three)');
+
+    //   const primary = tree.root.children[PRIMARY_OUTLET];
+    //   expectSegment(primary, 'one', true);
+
+    //   expectSegment(primary.children[PRIMARY_OUTLET], 'two');
+    //   expectSegment(primary.children['left'], 'three');
+
+    //   expect(url.serialize(tree)).toEqual('/one/(two//left:three)');
+    // });
+
+    // it('should parse scoped secondary segments with unscoped ones', () => {
+    //   const tree = url.parse('/one/(two//left:three)(right:four)');
+
+    //   const primary = tree.root.children[PRIMARY_OUTLET];
+    //   expectSegment(primary, 'one', true);
+    //   expectSegment(primary.children[PRIMARY_OUTLET], 'two');
+    //   expectSegment(primary.children['left'], 'three');
+    //   expectSegment(tree.root.children['right'], 'four');
+
+    //   expect(url.serialize(tree)).toEqual('/one/(two//left:three)(right:four)');
+    // });
+
+    // it('should parse secondary segments that have children', () => {
+    //   const tree = url.parse('/one(left:two/three)');
+
+    //   expectSegment(tree.root.children[PRIMARY_OUTLET], 'one');
+    //   expectSegment(tree.root.children['left'], 'two/three');
+
+    //   expect(url.serialize(tree)).toEqual('/one(left:two/three)');
+    // });
+
+    // it('should parse an empty secondary segment group', () => {
+    //   const tree = url.parse('/one()');
+
+    //   expectSegment(tree.root.children[PRIMARY_OUTLET], 'one');
+
+    //   expect(url.serialize(tree)).toEqual('/one');
+    // });
+
+    // it('should parse key-value matrix params', () => {
+    //   const tree = url.parse('/one;a=11a;b=11b(left:two;c=22//right:three;d=33)');
+
+    //   expectSegment(tree.root.children[PRIMARY_OUTLET], 'one;a=11a;b=11b');
+    //   expectSegment(tree.root.children['left'], 'two;c=22');
+    //   expectSegment(tree.root.children['right'], 'three;d=33');
+
+    //   expect(url.serialize(tree)).toEqual('/one;a=11a;b=11b(left:two;c=22//right:three;d=33)');
+    // });
+
+    // it('should parse key only matrix params', () => {
+    //   const tree = url.parse('/one;a');
+
+    //   expectSegment(tree.root.children[PRIMARY_OUTLET], 'one;a=');
+
+    //   expect(url.serialize(tree)).toEqual('/one;a=');
+    // });
+  });
+
   describe('parseQueryParams', () => {
 
     it('should parse query parameters', () => {
@@ -58,6 +165,18 @@ fdescribe('UrlParser', () => {
       const params = parseQueryParams('a=foo&a=bar&a=swaz');
       expect(params).toEqual({a: ['foo', 'bar', 'swaz']});
       expect(params['a']).toEqual(['foo', 'bar', 'swaz']);
+    });
+
+    it('should pass parseQueryparams example', () => {
+      const parsed = parseQueryParams('a=b&c=d&x=1&x=2&x=3&y=&z');
+
+      expect(parsed).toEqual({
+        a: 'b',
+        c: 'd',
+        x: ['1', '2', '3'],
+        y: undefined,
+        z: null
+      });
     });
   });
 });
