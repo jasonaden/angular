@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {getParams, parseUrl, parseUrlPath, parseQueryParams} from '../src/url_parser';
+import {parseUrl, getBalancedPositions, parseUrlPath, parseQueryParams, parseMatrixParams, parseParams} from '../src/url_parser';
 
 fdescribe('UrlParser', () => {
   describe('parseUrlPath', () => {
@@ -116,57 +116,77 @@ fdescribe('UrlParser', () => {
     // });
   });
 
-  describe('parseQueryParams', () => {
+  describe('parseParams', () => {
+
+    function parseAmpParams(paramString: string) {
+      return parseParams('&', '=', paramString);
+    }
 
     it('should parse query parameters', () => {
-      const params = parseQueryParams('k=v&k/(a;b)=c');
+      const params = parseAmpParams('k=v&k/(a;b)=c');
       expect(params).toEqual({
         'k': 'v',
         'k/(a;b)': 'c',
       });
     });
 
-    it('should parse query params', () => {
-      const params = parseQueryParams('a=1&b=2');
+    it('should parse params', () => {
+      const params = parseAmpParams('a=1&b=2');
       expect(params).toEqual({a: '1', b: '2'});
     });
 
-    it('should parse query params when with parenthesis', () => {
-      const params = parseQueryParams('a=(11)&b=(22)');
+    it('should parse params when with parenthesis', () => {
+      const params = parseAmpParams('a=(11)&b=(22)');
       expect(params).toEqual({a: '(11)', b: '(22)'});
     });
 
-    it('should parse query params when with slashes', () => {
-      const params = parseQueryParams('a=1/2&b=3/4');
+    it('should parse params when with slashes', () => {
+      const params = parseAmpParams('a=1/2&b=3/4');
       expect(params).toEqual({a: '1/2', b: '3/4'});
     });
 
-    it('should parse key only query params', () => {
-      const params = parseQueryParams('a');
+    it('should parse key only params', () => {
+      const params = parseAmpParams('a');
       expect(params).toEqual({a: null});
     });
 
     it('should parse a value-empty query param', () => {
-      const params = parseQueryParams('a=');
+      const params = parseAmpParams('a=');
       expect(params).toEqual({a: undefined});
     });
 
-    it('should parse value-empty query params', () => {
-      const params = parseQueryParams('a=&b=');
+    it('should parse value-empty params', () => {
+      const params = parseAmpParams('a=&b=');
       expect(params).toEqual({a: undefined, b: undefined});
     });
 
-    it('should return an empty object for empty query params', () => {
-      const params = parseQueryParams('');
+    it('should return an empty object for empty params', () => {
+      const params = parseAmpParams('');
       expect(params).toEqual({});
     });
 
-    it('should handle multiple query params of the same name into an array', () => {
-      const params = parseQueryParams('a=foo&a=bar&a=swaz');
+    it('should handle multiple params of the same name into an array', () => {
+      const params = parseAmpParams('a=foo&a=bar&a=swaz');
       expect(params).toEqual({a: ['foo', 'bar', 'swaz']});
       expect(params['a']).toEqual(['foo', 'bar', 'swaz']);
     });
+  });
 
+  describe('parseMatrixParams', () => {
+    it('should pass parseMatrixParams example', () => {
+      const parsed = parseMatrixParams('a=b;c=d;x=1;x=2;x=3;y=;z');
+
+      expect(parsed).toEqual({
+        a: 'b',
+        c: 'd',
+        x: ['1', '2', '3'],
+        y: undefined,
+        z: null
+      });
+    });
+  });
+
+  describe('parseQueryParams', () => {
     it('should pass parseQueryparams example', () => {
       const parsed = parseQueryParams('a=b&c=d&x=1&x=2&x=3&y=&z');
 
@@ -177,6 +197,39 @@ fdescribe('UrlParser', () => {
         y: undefined,
         z: null
       });
+    });
+  });
+
+  describe('getBalancedPositions', () => {
+    it('ignores strings without open/close characters', () => {
+      const str = 'one/two/three';
+
+      const pos = getBalancedPositions('(', ')', str);
+
+      expect(str.slice(pos.start, pos.end)).toBe(str);
+    });
+
+    it('finds string between single set of parens', () => {
+      const str = 'one(two)three';
+
+      const pos = getBalancedPositions('(', ')', str);
+
+      expect(str.slice(pos.start, pos.end)).toBe('two');
+    });
+
+    it('finds string between nested sets of parens', () => {
+      const str = 'one((two)(three))';
+
+      const pos = getBalancedPositions('(', ')', str);
+
+      expect(str.slice(pos.start, pos.end)).toBe('(two)(three)');
+    });
+
+    it('throws an error if parens are unballanced', () => {
+      const str = 'one((two)(three)';
+
+      expect(() => getBalancedPositions('(', ')', str))
+        .toThrowError('String contains unbalanced () characters');
     });
   });
 });

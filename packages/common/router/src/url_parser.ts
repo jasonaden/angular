@@ -22,13 +22,39 @@ export class UrlStore extends BaseStore<UrlState> {
 
 }
 
+export function parseUrl(url: string) {
+  // Ignore leading "/"
+  if (url.startsWith('/')) url = url.slice(1);
 
-export function parseUrl() {
+  // Split query params
 
+  // Split URL fragment
+
+  //
+
+  return url;
 }
 
-export function getParams() {
+/**
+ * Get the string positions between balanced characters.
+ */
+export function getBalancedPositions(open: string, close: string, str: string) {
+  const startIdx = str.indexOf(open);
+  if (startIdx === -1) return {start: 0, end: str.length};
 
+  const arr = str.split('').slice(startIdx + 1);
+  const counts = arr.reduce((acc, char, idx) => {
+    if (!acc.endIdx) {
+      if (char === open) acc.open++;
+      if (char === close) acc.close++;
+      if (acc.open === acc.close) acc.endIdx = idx;
+    }
+    return acc;
+  }, {open: 1, close: 0, endIdx: 0});
+
+  if (!counts.endIdx) throw new Error(`String contains unbalanced ${open}${close} characters`);
+
+  return {start: startIdx + 1, end: counts.endIdx + startIdx + 1};
 }
 
 /**
@@ -65,6 +91,25 @@ export function parseParams(paramDelim: string, valueDelim: string, paramString:
 
     return acc;
   }, paramsObj);
+}
+
+/**
+ * Converts matrix params string into a set of key/value pairs:
+ *
+ * ```
+ * const parsed = parseMatrixParams('a=b;c=d;x=1;x=2;x=3;y=;z');
+ *
+ * expect(parsed).toEqual({
+ *   a: 'b',
+ *   c: 'd',
+ *   x: ['1', '2', '3'],
+ *   y: undefined,
+ *   z: null
+ * });
+ * ```
+ */
+export function parseMatrixParams(queryString: string): {[key: string]: string | string[]} {
+  return parseParams(';', '=', queryString);
 }
 
 /**
