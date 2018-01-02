@@ -4,6 +4,7 @@ import {BaseStore} from './base_store';
 export interface UrlState {
   remaining: string;
   queryParams: {[key: string]: string | string[]};
+  fragment: any;
 
   // configToId: [RouteConfig, number][],
   // configs: {
@@ -22,17 +23,39 @@ export class UrlStore extends BaseStore<UrlState> {
 
 }
 
-export function parseUrl(url: string) {
-  // Ignore leading "/"
-  if (url.startsWith('/')) url = url.slice(1);
+export function parseUrl(url: string): UrlState {
+  const split = splitUrl(url);
+
+  return {
+    remaining: split.main.startsWith('/') ? split.main.slice(1) : split.main,
+    fragment: split.fragment,
+    queryParams: parseQueryParams(split.queryString)
+  };
+}
+
+export function splitUrl(url: string): {main: string, queryString?: string, fragment?: string} {
+  let fragment;
+  let queryString;
+
+  // Split URL fragment per https://tools.ietf.org/html/rfc3986#section-3.5
+  const fragmentIdx = url.indexOf('#');
+  if (~fragmentIdx) {
+    fragment = decode(url.substring(fragmentIdx + 1));
+    url = url.substring(0, fragmentIdx);
+  }
 
   // Split query params
+  const queryIdx = url.indexOf('?');
+  if (~queryIdx) {
+    queryString = url.substring(queryIdx + 1);
+    url = url.substring(0, queryIdx);
+  }
 
-  // Split URL fragment
-
-  //
-
-  return url;
+  return {
+    main: url,
+    fragment,
+    queryString
+  };
 }
 
 /**
@@ -69,8 +92,10 @@ export function parseUrlPath(path: string) {
   return path;
 }
 
-export function parseParams(paramDelim: string, valueDelim: string, paramString: string, ) {
+export function parseParams(paramDelim: string, valueDelim: string, paramString?: string ) {
   const paramsObj: {[key: string]: any} = {};
+  
+  if (!paramString) return paramsObj;
 
   return paramString.split(paramDelim).reduce((acc, param) => {
     if (!param) return acc;
@@ -108,7 +133,7 @@ export function parseParams(paramDelim: string, valueDelim: string, paramString:
  * });
  * ```
  */
-export function parseMatrixParams(queryString: string): {[key: string]: string | string[]} {
+export function parseMatrixParams(queryString?: string): {[key: string]: string | string[]} {
   return parseParams(';', '=', queryString);
 }
 
@@ -127,7 +152,7 @@ export function parseMatrixParams(queryString: string): {[key: string]: string |
  * });
  * ```
  */
-export function parseQueryParams(queryString: string): {[key: string]: string | string[]} {
+export function parseQueryParams(queryString?: string): {[key: string]: string | string[]} {
   return parseParams('&', '=', queryString);
 }
 

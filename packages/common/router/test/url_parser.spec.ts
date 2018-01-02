@@ -6,9 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {parseUrl, getBalancedPositions, parseUrlPath, parseQueryParams, parseMatrixParams, parseParams} from '../src/url_parser';
+import {parseUrl, getBalancedPositions, parseUrlPath, parseQueryParams, parseMatrixParams, parseParams, splitUrl} from '../src/url_parser';
 
-fdescribe('UrlParser', () => {
+describe('UrlParser', () => {
   describe('parseUrlPath', () => {
     it('should parse the root url', () => {
       const path = parseUrlPath('/');
@@ -114,6 +114,32 @@ fdescribe('UrlParser', () => {
 
     //   expect(url.serialize(tree)).toEqual('/one;a=');
     // });
+  });
+
+  describe('splitUrl', () => {
+    it('should always return a "main"', () => {
+      const split = splitUrl('');
+      expect(split.main).toBe('');
+    });
+
+    it('should split a URL fragment', () => {
+      const split = splitUrl('abc/def#fragment');
+      expect(split.main).toBe('abc/def');
+      expect(split.fragment).toBe('fragment');
+    });
+
+    it('should split a query string', () => {
+      const split = splitUrl('abc/def?query_string');
+      expect(split.main).toBe('abc/def');
+      expect(split.queryString).toBe('query_string');
+    });
+
+    it('should split when both query string and fragment are defined', () => {
+      const split = splitUrl('abc/def?query_string#fragment');
+      expect(split.main).toBe('abc/def');
+      expect(split.queryString).toBe('query_string');
+      expect(split.fragment).toBe('fragment');
+    });
   });
 
   describe('parseParams', () => {
