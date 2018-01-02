@@ -1,5 +1,6 @@
 
 import {BaseStore} from './base_store';
+import {PRIMARY_OUTLET} from "./shared";
 
 export interface UrlState {
   remaining: string;
@@ -30,6 +31,15 @@ export function parseUrl(url: string): UrlState {
     remaining: split.main.startsWith('/') ? split.main.slice(1) : split.main,
     fragment: split.fragment,
     queryParams: parseQueryParams(split.queryString)
+  };
+}
+
+export function parseOutlet(url: string): {name: string, path: string} {
+  const splitIdx = url.indexOf(':');
+
+  return {
+    name: url.substring(0, splitIdx) || PRIMARY_OUTLET,
+    path: url.substring(splitIdx + 1)
   };
 }
 

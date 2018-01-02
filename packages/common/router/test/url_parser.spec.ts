@@ -6,7 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {parseUrl, getBalancedPositions, parseUrlPath, parseQueryParams, parseMatrixParams, parseParams, splitUrl} from '../src/url_parser';
+import {parseUrl, getBalancedPositions, parseUrlPath, parseQueryParams, parseMatrixParams, parseParams, splitUrl, parseOutlet} from '../src/url_parser';
+import {PRIMARY_OUTLET} from "../src/shared";
 
 describe('UrlParser', () => {
   describe('parseUrlPath', () => {
@@ -114,6 +115,29 @@ describe('UrlParser', () => {
 
     //   expect(url.serialize(tree)).toEqual('/one;a=');
     // });
+  });
+
+  fdescribe('parseOutlet', () => {
+    it('should default to the primary outlet', () => {
+      const parsed = parseOutlet('one/two');
+
+      expect(parsed.name).toBe(PRIMARY_OUTLET);
+      expect(parsed.path).toBe('one/two');
+    });
+
+    it('should parse an outlet name', () => {
+      const parsed = parseOutlet('main:one/two');
+
+      expect(parsed.name).toBe('main');
+      expect(parsed.path).toBe('one/two');
+    });
+
+    it('should ignore colons other than the first one', () => {
+      const parsed = parseOutlet('main:one/:two');
+
+      expect(parsed.name).toBe('main');
+      expect(parsed.path).toBe('one/:two');
+    });
   });
 
   describe('splitUrl', () => {
