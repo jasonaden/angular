@@ -2,10 +2,36 @@
 import {BaseStore} from './base_store';
 import {PRIMARY_OUTLET} from "./shared";
 
+/**
+ * Represents a piece of a URL. These must be uniquely identifiable so they can refer to
+ * each other through the `children` property.
+ */
+export interface UrlSegment {
+  /**
+   * By default, the router will generate an ID by concatinating the ID from the
+   * previous URL with the path for this URL. This means the ID will be the 
+   * path from the root of the URL to this segment.
+   */
+  id: string;
+
+  /** A named router outlet. This defaults to the PRIMARY_OUTLET constant. */
+  outlet: string;
+
+  /** The path for this segment. */
+  path: string;
+  
+  /** Parsed matrix params for this segment. */
+  params: {[key: string]: string | string[]};
+
+  /** Child UrlSegments by ID */
+  children: string[];
+}
+
 export interface UrlState {
   remaining: string;
   queryParams: {[key: string]: string | string[]};
   fragment: any;
+  segments: {[key: string]: UrlSegment};
 
   // configToId: [RouteConfig, number][],
   // configs: {
@@ -30,7 +56,45 @@ export function parseUrl(url: string): UrlState {
   return {
     remaining: split.main.startsWith('/') ? split.main.slice(1) : split.main,
     fragment: split.fragment,
-    queryParams: parseQueryParams(split.queryString)
+    queryParams: parseQueryParams(split.queryString),
+    segments: {}
+  };
+}
+
+/**
+ * Splits a URL into siblings and unscoped pieces.
+ */
+export function splitPath(url: string): string[] {
+  let parenCount = 0;
+  
+  const splits = url.split('').reduce((acc, curr, idx, a) => {
+    if (curr === '(') acc.parenCount++;
+    if (curr === ')') acc.parenCount--;
+    if (acc.parenCount) return acc;
+    
+    const prev = a[idx - 1];
+    if (curr === prev && curr === '/') acc.indexes.push(idx - 1);
+    if (idx === a.length - 1) acc.indexes.push(idx + 1);
+
+    return acc;
+  }, {parenCount: 0, indexes: [] as number[]});
+  if (splits.parenCount < 0) throw new Error("Unbalanced parenthesis in URL string: " + url);
+  
+  return splits.indexes.reduce((acc, splitIdx, idx, a) => {
+    const prevSplitIdx = a[idx - 1];
+    const startIdx = idx === 0 ? 0 : prevSplitIdx + 2;
+    acc.push(url.slice(startIdx, splitIdx));
+    return acc;
+  }, [] as string[]);
+}
+
+/**
+ * Splits the URL into the parent segment (parsable by itself) and children (in parens).
+ */
+export function parsePath(url: string): {path: string, children: string} {
+  return {
+    path: '',
+    children: ''
   };
 }
 

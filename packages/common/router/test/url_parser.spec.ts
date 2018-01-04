@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {parseUrl, getBalancedPositions, parseUrlPath, parseQueryParams, parseMatrixParams, parseParams, splitUrl, parseOutlet} from '../src/url_parser';
+import {parseUrl, getBalancedPositions, parseUrlPath, parseQueryParams, parseMatrixParams, parseParams, splitUrl, parseOutlet, parsePath, splitPath} from '../src/url_parser';
 import {PRIMARY_OUTLET} from "../src/shared";
 
 describe('UrlParser', () => {
@@ -117,7 +117,52 @@ describe('UrlParser', () => {
     // });
   });
 
-  fdescribe('parseOutlet', () => {
+  describe('splitPath', () => {
+    it('should return self for a simple URL', () => {
+      const parsed = splitPath('one/two');
+
+      expect(parsed).toEqual(['one/two']);
+    });
+
+    it('should split on double slash', () => {
+      const parsed = splitPath('one/two//three/four');
+
+      expect(parsed).toEqual(['one/two', 'three/four']);
+    });
+
+    it('should ignore double slashes within parens', () => {
+      const parsed = splitPath('one/two//three/four/(five//six)');
+
+      expect(parsed).toEqual(['one/two', 'three/four/(five//six)']);
+    });
+
+    it('should split after closed parens', () => {
+      const parsed = splitPath('one/two//three/four/(five//six)//seven/eight');
+
+      expect(parsed).toEqual(['one/two', 'three/four/(five//six)', 'seven/eight']);
+    });
+
+    // Breaking change from existing router. In this parser, "//" is the only way to make
+    // siblings. In the old parser, "main(other)" was different than "main/(other)" but
+    // only when not nested.
+    it('should consider "/(" and "(" to be the same', () => {
+      const parsed = splitPath('one/two/(three/four)');
+      const parsed2 = splitPath('one/two(three/four)');
+
+      expect(parsed).toEqual(['one/two/(three/four)']);
+      expect(parsed2).toEqual(['one/two(three/four)']);
+    });
+  });
+
+  describe('parsePath', () => {
+    it('should return self if no children', () => {
+      const parsed = parsePath('');
+
+      expect(parsed)
+    });
+  });
+
+  describe('parseOutlet', () => {
     it('should default to the primary outlet', () => {
       const parsed = parseOutlet('one/two');
 
