@@ -14,17 +14,17 @@ export interface UrlSegment {
    */
   id: string;
 
+  /** The path for this segment. */
+  path: string;
+
   /** A named router outlet. This defaults to the PRIMARY_OUTLET constant. */
   outlet: string;
 
-  /** The path for this segment. */
-  path: string;
-  
   /** Parsed matrix params for this segment. */
-  params: {[key: string]: string | string[]};
+  params: {[key: string]: string | string[]} | null;
 
   /** Child UrlSegments by ID */
-  children: string[];
+  children: UrlSegment[] | null;
 }
 
 export interface UrlState {
@@ -58,6 +58,34 @@ export function parseUrl(url: string): UrlState {
     fragment: split.fragment,
     queryParams: parseQueryParams(split.queryString),
     segments: {}
+  };
+}
+
+/**
+ * Parses a URL segment into a UrlSegment object.
+ */
+export function parseSegment(segment: string): UrlSegment {
+  let children = null;
+  let {name: outlet, path} = parseOutlet(segment);
+  const paramsIdx = path.indexOf(';');
+  const params = ~paramsIdx ? parseMatrixParams(segment.slice(paramsIdx + 1)) : null;
+  path = ~paramsIdx ? path.slice(0, paramsIdx) : path;
+
+  const balancedPositions = getBalancedPositions('(', ')', path);
+
+  if (balancedPositions.exists) {
+    const childUrl = path.substring(balancedPositions.start, balancedPositions.end);
+    const childPaths = splitPath(childUrl);
+    children = childPaths.map(child => parseSegment(child));
+    path = path.substring(0, balancedPositions.start - 1);
+  }
+
+  return {
+    id: `${outlet}:${path}`,
+    path: path,
+    outlet: outlet,
+    params: params,
+    children: children
   };
 }
 
@@ -137,7 +165,7 @@ export function splitUrl(url: string): {main: string, queryString?: string, frag
  */
 export function getBalancedPositions(open: string, close: string, str: string) {
   const startIdx = str.indexOf(open);
-  if (startIdx === -1) return {start: 0, end: str.length};
+  if (startIdx === -1) return {start: 0, end: str.length, exists: false};
 
   const arr = str.split('').slice(startIdx + 1);
   const counts = arr.reduce((acc, char, idx) => {
@@ -151,7 +179,7 @@ export function getBalancedPositions(open: string, close: string, str: string) {
 
   if (!counts.endIdx) throw new Error(`String contains unbalanced ${open}${close} characters`);
 
-  return {start: startIdx + 1, end: counts.endIdx + startIdx + 1};
+  return {start: startIdx + 1, end: counts.endIdx + startIdx + 1, exists: true};
 }
 
 /**

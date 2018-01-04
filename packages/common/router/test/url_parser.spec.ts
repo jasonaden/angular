@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {parseUrl, getBalancedPositions, parseUrlPath, parseQueryParams, parseMatrixParams, parseParams, splitUrl, parseOutlet, parsePath, splitPath} from '../src/url_parser';
+import {parseUrl, getBalancedPositions, parseUrlPath, parseQueryParams, parseMatrixParams, parseParams, splitUrl, parseOutlet, parsePath, splitPath, parseSegment} from '../src/url_parser';
 import {PRIMARY_OUTLET} from "../src/shared";
 
 describe('UrlParser', () => {
@@ -115,6 +115,63 @@ describe('UrlParser', () => {
 
     //   expect(url.serialize(tree)).toEqual('/one;a=');
     // });
+  });
+
+  describe('parseSegment', () => {
+
+    it('should parse a simple segment', () => {
+      const parsed = parseSegment('one/two');
+
+      expect(parsed).toEqual({
+        id: 'primary:one/two',
+        path: 'one/two',
+        outlet: 'primary',
+        params: null,
+        children: null
+      });
+    });
+
+    it('should parse params from a segment', () => {
+      const parsed = parseSegment('one/two;p1=one;p2=two');
+
+      expect(parsed).toEqual({
+        id: 'primary:one/two',
+        path: 'one/two',
+        outlet: PRIMARY_OUTLET,
+        params: {p1: 'one', p2: 'two'},
+        children: null
+      });
+    });
+
+    it('should parse an outlet name', () => {
+      const parsed = parseSegment('main:one/two');
+
+      expect(parsed).toEqual({
+        id: 'main:one/two',
+        path: 'one/two',
+        outlet: 'main',
+        params: null,
+        children: null
+      });
+    });
+
+    it('should parse a child segment', () => {
+      const parsed = parseSegment('one/two(three/four)');
+
+      expect(parsed).toEqual({
+        id: 'primary:one/two',
+        path: 'one/two',
+        outlet: 'primary',
+        params: null,
+        children: [{
+          id: 'primary:three/four',
+          path: 'three/four',
+          outlet: 'primary',
+          params: null,
+          children: null
+        }]
+      });
+    });
   });
 
   describe('splitPath', () => {
