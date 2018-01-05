@@ -6,115 +6,277 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {parseUrl, getBalancedPositions, parseUrlPath, parseQueryParams, parseMatrixParams, parseParams, splitUrl, parseOutlet, parsePath, splitPath, parseSegment} from '../src/url_parser';
+import {parseUrl, getBalancedPositions, parseQueryParams, parseMatrixParams, parseParams, splitUrl, parseOutlet, parsePath, splitPath, parseSegment, cleanUrl} from '../src/url_parser';
 import {PRIMARY_OUTLET} from "../src/shared";
 
 describe('UrlParser', () => {
-  describe('parseUrlPath', () => {
+  describe('parseUrl', () => {
     it('should parse the root url', () => {
-      const path = parseUrlPath('/');
-      expect(path).toEqual('/');
+      const parsed = parseUrl('/');
+      expect(parsed).toEqual({
+        raw: '/',
+        fragment: null,
+        queryParams: null,
+        segments: [{
+          id: 'primary:',
+          path: '',
+          outlet: 'primary',
+          params: null,
+          children: null
+        }]
+      });
     });
 
-    // it('should parse non-empty urls', () => {
-    //   const tree = url.parse('one/two');
-    //   expectSegment(tree.root.children[PRIMARY_OUTLET], 'one/two');
-    //   expect(url.serialize(tree)).toEqual('/one/two');
-    // });
+    it('should parse non-empty urls', () => {
+      const parsed = parseUrl('one/two');
 
-    // it('should parse multiple secondary segments', () => {
-    //   const tree = url.parse('/one/two(left:three//right:four)');
+      expect(parsed).toEqual({
+        raw: 'one/two',
+        fragment: null,
+        queryParams: null,
+        segments: [{
+          id: 'primary:one/two',
+          path: 'one/two',
+          outlet: 'primary',
+          params: null,
+          children: null
+        }]
+      });
+    });
 
-    //   expectSegment(tree.root.children[PRIMARY_OUTLET], 'one/two');
-    //   expectSegment(tree.root.children['left'], 'three');
-    //   expectSegment(tree.root.children['right'], 'four');
+    it('should parse multiple secondary segments', () => {
+      const parsed = parseUrl('/one/two(left:three//right:four)');
 
-    //   expect(url.serialize(tree)).toEqual('/one/two(left:three//right:four)');
-    // });
+      expect(parsed).toEqual({
+        raw: '/one/two(left:three//right:four)',
+        fragment: null,
+        queryParams: null,
+        segments: [{
+          id: 'primary:one/two',
+          path: 'one/two',
+          outlet: 'primary',
+          params: null,
+          children: [{
+            id: 'left:three',
+            path: 'three',
+            outlet: 'left',
+            params: null,
+            children: null
+          },
+          {
+            id: 'right:four',
+            path: 'four',
+            outlet: 'right',
+            params: null,
+            children: null
+          }]
+        }]
+      });
+    });
 
-    // it('should parse top-level nodes with only secondary segment', () => {
-    //   const tree = url.parse('/(left:one)');
+    it('should parse top-level nodes with only secondary segment', () => {
+      const parsed = parseUrl('/(left:one)');
 
-    //   expect(tree.root.numberOfChildren).toEqual(1);
-    //   expectSegment(tree.root.children['left'], 'one');
+      expect(parsed.segments[0].id).toBe('primary:');
+      expect(parsed.segments[0].children! [0].id).toBe('left:one');
+      expect(parsed.segments[0].children! [0].children).toBe(null);
+    });
 
-    //   expect(url.serialize(tree)).toEqual('/(left:one)');
-    // });
+    it('should parse nodes with only secondary segment', () => {
+      const parsed = parseUrl('/one/(left:two)');
 
-    // it('should parse nodes with only secondary segment', () => {
-    //   const tree = url.parse('/one/(left:two)');
+      expect(parsed.segments[0].id).toBe('primary:one/');
+      expect(parsed.segments[0].children! [0].id).toBe('left:two');
+    });
 
-    //   const one = tree.root.children[PRIMARY_OUTLET];
-    //   expectSegment(one, 'one', true);
-    //   expect(one.numberOfChildren).toEqual(1);
-    //   expectSegment(one.children['left'], 'two');
+    xit('should not parse empty path segments with params', () => {
+      expect(() => parseUrl('/one/two/(;a=1//right:;b=2)'))
+          .toThrowError(/Empty path url segment cannot have parameters/);
+    });
 
-    //   expect(url.serialize(tree)).toEqual('/one/(left:two)');
-    // });
+    it('should parse scoped secondary segments', () => {
+      const parsed = parseUrl('/one/(two//left:three)');
 
-    // it('should not parse empty path segments with params', () => {
-    //   expect(() => url.parse('/one/two/(;a=1//right:;b=2)'))
-    //       .toThrowError(/Empty path url segment cannot have parameters/);
-    // });
+      expect(parsed.segments[0].children! [0].id).toBe('primary:two');
+      expect(parsed.segments[0].children! [1].id).toBe('left:three');
+    });
 
-    // it('should parse scoped secondary segments', () => {
-    //   const tree = url.parse('/one/(two//left:three)');
+    xit('should parse scoped secondary segments with unscoped ones', () => {
+      const parsed = parseUrl('/one/(two//left:three)(right:four)');
 
-    //   const primary = tree.root.children[PRIMARY_OUTLET];
-    //   expectSegment(primary, 'one', true);
+      // TODO(jasonaden): Handle the above scenario. It shouldn't be supported based on new
+      // URL scheme.
+      
+      // const primary = tree.root.children[PRIMARY_OUTLET];
+      // expectSegment(primary, 'one', true);
+      // expectSegment(primary.children[PRIMARY_OUTLET], 'two');
+      // expectSegment(primary.children['left'], 'three');
+      // expectSegment(tree.root.children['right'], 'four');
 
-    //   expectSegment(primary.children[PRIMARY_OUTLET], 'two');
-    //   expectSegment(primary.children['left'], 'three');
+      // expect(url.serialize(tree)).toEqual('/one/(two//left:three)(right:four)');
+    });
 
-    //   expect(url.serialize(tree)).toEqual('/one/(two//left:three)');
-    // });
+    it('should parse secondary segments that have children', () => {
+      const parsed = parseUrl('/one(left:two/three)');
 
-    // it('should parse scoped secondary segments with unscoped ones', () => {
-    //   const tree = url.parse('/one/(two//left:three)(right:four)');
+      expect(parsed.segments.length).toBe(1);
+      expect(parsed.segments[0].children![0].id).toBe('left:two/three');
+    });
 
-    //   const primary = tree.root.children[PRIMARY_OUTLET];
-    //   expectSegment(primary, 'one', true);
-    //   expectSegment(primary.children[PRIMARY_OUTLET], 'two');
-    //   expectSegment(primary.children['left'], 'three');
-    //   expectSegment(tree.root.children['right'], 'four');
+    it('should parse secondary segments that have children', () => {
+      const parsed = parseUrl('/one//left:two/three');
 
-    //   expect(url.serialize(tree)).toEqual('/one/(two//left:three)(right:four)');
-    // });
+      expect(parsed.segments.length).toBe(2);
+      expect(parsed.segments[0].id).toBe('primary:one');
+      expect(parsed.segments[1].id).toBe('left:two/three');
+    });
 
-    // it('should parse secondary segments that have children', () => {
-    //   const tree = url.parse('/one(left:two/three)');
+    it('should parse an empty secondary segment group', () => {
+      const parsed = parseUrl('/one()');
 
-    //   expectSegment(tree.root.children[PRIMARY_OUTLET], 'one');
-    //   expectSegment(tree.root.children['left'], 'two/three');
+      expect(parsed.segments[0].id).toBe('primary:one');
+      expect(parsed.segments[0].children).toBe(null);
+    });
 
-    //   expect(url.serialize(tree)).toEqual('/one(left:two/three)');
-    // });
+    it('should parse key-value matrix params', () => {
+      const parsed = parseUrl('/one;a=11a;b=11b(left:two;c=22//right:three;d=33)');
 
-    // it('should parse an empty secondary segment group', () => {
-    //   const tree = url.parse('/one()');
+      expect(parsed).toEqual({
+        raw: '/one;a=11a;b=11b(left:two;c=22//right:three;d=33)',
+        fragment: null,
+        queryParams: null,
+        segments: [{
+          id: 'primary:one',
+          path: 'one',
+          outlet: 'primary',
+          params: {a: '11a', b: '11b'},
+          children: [{
+            id: 'left:two',
+            path: 'two',
+            outlet: 'left',
+            params: {c: '22'},
+            children: null
+          },
+          {
+            id: 'right:three',
+            path: 'three',
+            outlet: 'right',
+            params: {d: '33'},
+            children: null
+          }]
+        }]
+      });
+    });
 
-    //   expectSegment(tree.root.children[PRIMARY_OUTLET], 'one');
+    it('should parse key only matrix params', () => {
+      const parsed = parseUrl('/one;a');
 
-    //   expect(url.serialize(tree)).toEqual('/one');
-    // });
+      expect(parsed.segments[0]).toEqual({
+        id: 'primary:one',
+        path: 'one',
+        outlet: 'primary',
+        params: {a: null},
+        children: null
+      });
+    });
+  });
 
-    // it('should parse key-value matrix params', () => {
-    //   const tree = url.parse('/one;a=11a;b=11b(left:two;c=22//right:three;d=33)');
+  describe('cleanUrl', () => {
+    
+    it('should ignore clean URLs', () => {
+      const cleaned = cleanUrl('something');
 
-    //   expectSegment(tree.root.children[PRIMARY_OUTLET], 'one;a=11a;b=11b');
-    //   expectSegment(tree.root.children['left'], 'two;c=22');
-    //   expectSegment(tree.root.children['right'], 'three;d=33');
+      expect(cleaned).toBe('something');
+    });
+    
+    it('should remove leading "/"', () => {
+      const cleaned = cleanUrl('/something');
 
-    //   expect(url.serialize(tree)).toEqual('/one;a=11a;b=11b(left:two;c=22//right:three;d=33)');
-    // });
+      expect(cleaned).toBe('something');
+    });
+    
+    it('should remove all leading "/" characters', () => {
+      const cleaned = cleanUrl('///something');
 
-    // it('should parse key only matrix params', () => {
-    //   const tree = url.parse('/one;a');
+      expect(cleaned).toBe('something');
+    });
+    
+    it('should remove all empty parens', () => {
+      const cleaned = cleanUrl('some()thing()');
 
-    //   expectSegment(tree.root.children[PRIMARY_OUTLET], 'one;a=');
+      expect(cleaned).toBe('something');
+    });
+    
+    it('should clean both at the same time', () => {
+      const cleaned = cleanUrl('/something()');
 
-    //   expect(url.serialize(tree)).toEqual('/one;a=');
-    // });
+      expect(cleaned).toBe('something');
+    });
+  });
+
+  describe('parsePath', () => {
+    it('should return self if no children', () => {
+      const parsed = parsePath('');
+      const parsed2 = parsePath('one/two');
+
+      expect(parsed).toEqual({path: '', children: null});
+      expect(parsed2).toEqual({path: 'one/two', children: null});
+    });
+    
+    it('should ignore outlets and matrix params', () => {
+      const parsed = parsePath('main:one/two;three=four');
+
+      expect(parsed).toEqual({path: 'main:one/two;three=four', children: null});
+    });
+
+    it('should split children if they exist', () => {
+      const parsed = parsePath('main:one/two(three/four)');
+      
+      expect(parsed).toEqual({path: 'main:one/two', children: 'three/four'});
+    });
+
+    it('should ignore nested children', () => {
+      const parsed = parsePath('main:one/two(three/four(five/six))');
+      
+      expect(parsed).toEqual({path: 'main:one/two', children: 'three/four(five/six)'});
+    });
+  });
+
+  describe('splitPath', () => {
+    it('should return self for a simple URL', () => {
+      const parsed = splitPath('one/two');
+
+      expect(parsed).toEqual(['one/two']);
+    });
+
+    it('should split on double slash', () => {
+      const parsed = splitPath('one/two//three/four');
+
+      expect(parsed).toEqual(['one/two', 'three/four']);
+    });
+
+    it('should ignore double slashes within parens', () => {
+      const parsed = splitPath('one/two//three/four/(five//six)');
+
+      expect(parsed).toEqual(['one/two', 'three/four/(five//six)']);
+    });
+
+    it('should split after closed parens', () => {
+      const parsed = splitPath('one/two//three/four/(five//six)//seven/eight');
+
+      expect(parsed).toEqual(['one/two', 'three/four/(five//six)', 'seven/eight']);
+    });
+
+    // Breaking change from existing router. In this parser, "//" is the only way to make
+    // siblings. In the old parser, "main(other)" was different than "main/(other)" but
+    // only when not nested.
+    it('should consider "/(" and "(" to be the same', () => {
+      const parsed = splitPath('one/two/(three/four)');
+      const parsed2 = splitPath('one/two(three/four)');
+
+      expect(parsed).toEqual(['one/two/(three/four)']);
+      expect(parsed2).toEqual(['one/two(three/four)']);
+    });
   });
 
   describe('parseSegment', () => {
@@ -172,50 +334,19 @@ describe('UrlParser', () => {
         }]
       });
     });
-  });
 
-  describe('splitPath', () => {
-    it('should return self for a simple URL', () => {
-      const parsed = splitPath('one/two');
+    it('should parse an empty segment', () => {
+      const parsed = parseSegment('');
+      const parsed2 = parseSegment();
 
-      expect(parsed).toEqual(['one/two']);
-    });
-
-    it('should split on double slash', () => {
-      const parsed = splitPath('one/two//three/four');
-
-      expect(parsed).toEqual(['one/two', 'three/four']);
-    });
-
-    it('should ignore double slashes within parens', () => {
-      const parsed = splitPath('one/two//three/four/(five//six)');
-
-      expect(parsed).toEqual(['one/two', 'three/four/(five//six)']);
-    });
-
-    it('should split after closed parens', () => {
-      const parsed = splitPath('one/two//three/four/(five//six)//seven/eight');
-
-      expect(parsed).toEqual(['one/two', 'three/four/(five//six)', 'seven/eight']);
-    });
-
-    // Breaking change from existing router. In this parser, "//" is the only way to make
-    // siblings. In the old parser, "main(other)" was different than "main/(other)" but
-    // only when not nested.
-    it('should consider "/(" and "(" to be the same', () => {
-      const parsed = splitPath('one/two/(three/four)');
-      const parsed2 = splitPath('one/two(three/four)');
-
-      expect(parsed).toEqual(['one/two/(three/four)']);
-      expect(parsed2).toEqual(['one/two(three/four)']);
-    });
-  });
-
-  describe('parsePath', () => {
-    it('should return self if no children', () => {
-      const parsed = parsePath('');
-
-      expect(parsed)
+      expect(parsed).toEqual(parsed2);
+      expect(parsed).toEqual({
+        id: 'primary:',
+        path: '',
+        outlet: 'primary',
+        params: null,
+        children: null
+      });
     });
   });
 
@@ -314,13 +445,13 @@ describe('UrlParser', () => {
 
     it('should return an empty object for empty params', () => {
       const params = parseAmpParams('');
-      expect(params).toEqual({});
+      expect(params).toEqual(null);
     });
 
     it('should handle multiple params of the same name into an array', () => {
       const params = parseAmpParams('a=foo&a=bar&a=swaz');
       expect(params).toEqual({a: ['foo', 'bar', 'swaz']});
-      expect(params['a']).toEqual(['foo', 'bar', 'swaz']);
+      expect(params && params['a']).toEqual(['foo', 'bar', 'swaz']);
     });
   });
 

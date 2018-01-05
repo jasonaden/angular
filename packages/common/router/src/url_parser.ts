@@ -28,10 +28,10 @@ export interface UrlSegment {
 }
 
 export interface UrlState {
-  remaining: string;
-  queryParams: {[key: string]: string | string[]};
-  fragment: any;
-  segments: {[key: string]: UrlSegment};
+  raw: string;
+  queryParams: {[key: string]: string | string[]} | null;
+  fragment: string | null;
+  segments: UrlSegment[];
 
   // configToId: [RouteConfig, number][],
   // configs: {
@@ -51,35 +51,36 @@ export class UrlStore extends BaseStore<UrlState> {
 }
 
 export function parseUrl(url: string): UrlState {
-  const split = splitUrl(url);
+  const split = splitUrl(cleanUrl(url));
 
   return {
-    remaining: split.main.startsWith('/') ? split.main.slice(1) : split.main,
+    raw: url,
     fragment: split.fragment,
     queryParams: parseQueryParams(split.queryString),
-    segments: {}
+    segments: splitPath(split.main).map(parseSegment)
   };
+}
+
+/**
+ * Cleans up the URL, preparing it for parsing.
+ */
+export function cleanUrl(url: string) {
+  // Clean the URL, removing any empty parens and leading "/"
+  return url.replace(/^\/+|\(\)/g, '');
 }
 
 /**
  * Parses a URL segment into a UrlSegment object.
  */
-export function parseSegment(segment: string): UrlSegment {
-  let children = null;
-  let {name: outlet, path} = parseOutlet(segment);
-  const paramsIdx = path.indexOf(';');
-  const params = ~paramsIdx ? parseMatrixParams(segment.slice(paramsIdx + 1)) : null;
-  path = ~paramsIdx ? path.slice(0, paramsIdx) : path;
+export function parseSegment(segment: string = ''): UrlSegment {
+  const {path: remainingUrl, children: childPath} = parsePath(segment);
+  const {name: outlet, path: mainPath} = parseOutlet(remainingUrl);
+  const paramsIdx = mainPath.indexOf(';');
+  const params = ~paramsIdx ? parseMatrixParams(mainPath.slice(paramsIdx + 1)) : null;
+  const path = ~paramsIdx ? mainPath.slice(0, paramsIdx) : mainPath;
 
-  const balancedPositions = getBalancedPositions('(', ')', path);
-
-  if (balancedPositions.exists) {
-    const childUrl = path.substring(balancedPositions.start, balancedPositions.end);
-    const childPaths = splitPath(childUrl);
-    children = childPaths.map(child => parseSegment(child));
-    path = path.substring(0, balancedPositions.start - 1);
-  }
-
+  const children = childPath ? splitPath(childPath).map(parseSegment) : null;
+  
   return {
     id: `${outlet}:${path}`,
     path: path,
@@ -90,11 +91,31 @@ export function parseSegment(segment: string): UrlSegment {
 }
 
 /**
+ * Splits the URL into the parent segment (parsable by itself) and children (in parens).
+ */
+export function parsePath(path: string): {path: string, children: string|null} {
+  const balancedPositions = getBalancedPositions('(', ')', path);
+  let children = null;
+  
+  if (balancedPositions.exists) {
+    children = path.substring(balancedPositions.start, balancedPositions.end);
+    path = path.substring(0, balancedPositions.start - 1);
+  }
+
+  return {
+    path: path,
+    children: children
+  };
+}
+
+/**
  * Splits a URL into siblings and unscoped pieces.
  */
 export function splitPath(url: string): string[] {
   let parenCount = 0;
-  
+
+  if (url.length == 0) return [url];
+
   const splits = url.split('').reduce((acc, curr, idx, a) => {
     if (curr === '(') acc.parenCount++;
     if (curr === ')') acc.parenCount--;
@@ -116,16 +137,6 @@ export function splitPath(url: string): string[] {
   }, [] as string[]);
 }
 
-/**
- * Splits the URL into the parent segment (parsable by itself) and children (in parens).
- */
-export function parsePath(url: string): {path: string, children: string} {
-  return {
-    path: '',
-    children: ''
-  };
-}
-
 export function parseOutlet(url: string): {name: string, path: string} {
   const splitIdx = url.indexOf(':');
 
@@ -135,9 +146,9 @@ export function parseOutlet(url: string): {name: string, path: string} {
   };
 }
 
-export function splitUrl(url: string): {main: string, queryString?: string, fragment?: string} {
-  let fragment;
-  let queryString;
+export function splitUrl(url: string): {main: string, queryString: string | null, fragment: string | null} {
+  let fragment = null;
+  let queryString = null;
 
   // Split URL fragment per https://tools.ietf.org/html/rfc3986#section-3.5
   const fragmentIdx = url.indexOf('#');
@@ -167,38 +178,26 @@ export function getBalancedPositions(open: string, close: string, str: string) {
   const startIdx = str.indexOf(open);
   if (startIdx === -1) return {start: 0, end: str.length, exists: false};
 
-  const arr = str.split('').slice(startIdx + 1);
+  const arr = str.split('').slice(startIdx);
   const counts = arr.reduce((acc, char, idx) => {
-    if (!acc.endIdx) {
+    if (acc.endIdx === -1) {
       if (char === open) acc.open++;
       if (char === close) acc.close++;
       if (acc.open === acc.close) acc.endIdx = idx;
     }
     return acc;
-  }, {open: 1, close: 0, endIdx: 0});
+  }, {open: 0, close: 0, endIdx: -1});
 
-  if (!counts.endIdx) throw new Error(`String contains unbalanced ${open}${close} characters`);
+  if (counts.endIdx === -1) throw new Error(`String contains unbalanced ${open}${close} characters`);
 
-  return {start: startIdx + 1, end: counts.endIdx + startIdx + 1, exists: true};
+  return {start: startIdx + 1, end: counts.endIdx + startIdx, exists: startIdx + 1 !== counts.endIdx + startIdx};
 }
 
-/**
- * Converts a URL path into path plus key/value pairs for matrix parameters:
- *
- * ```
- * const parsed = parseUrlPath('parent/child;a=b;c=d;x=1;x=2;x=3;y=;z');
- * ```
- *
- */
-export function parseUrlPath(path: string) {
-  return path;
-}
+export function parseParams(paramDelim: string, valueDelim: string, paramString: string | null) {
+  if (!paramString) return null;
 
-export function parseParams(paramDelim: string, valueDelim: string, paramString?: string ) {
   const paramsObj: {[key: string]: any} = {};
   
-  if (!paramString) return paramsObj;
-
   return paramString.split(paramDelim).reduce((acc, param) => {
     if (!param) return acc;
 
@@ -235,7 +234,7 @@ export function parseParams(paramDelim: string, valueDelim: string, paramString?
  * });
  * ```
  */
-export function parseMatrixParams(queryString?: string): {[key: string]: string | string[]} {
+export function parseMatrixParams(queryString: string | null) {
   return parseParams(';', '=', queryString);
 }
 
@@ -254,7 +253,7 @@ export function parseMatrixParams(queryString?: string): {[key: string]: string 
  * });
  * ```
  */
-export function parseQueryParams(queryString?: string): {[key: string]: string | string[]} {
+export function parseQueryParams(queryString: string | null) {
   return parseParams('&', '=', queryString);
 }
 
