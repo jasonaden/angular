@@ -13,7 +13,14 @@ import {Params} from '../src/shared';
 describe('RouterStore', () => {
   let state: RouterState;
   let store: RouterStore;
-  const root: RouterState = {configToId: [], configs: {}};
+  const root: RouterState = {
+    configToId: [],
+    configs: {},
+    targetUrl: null,
+    previousUrl: null,
+    targetState: null,
+    previousState: null
+  };
 
   beforeEach(() => {
     store = new RouterStore(root);

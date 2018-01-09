@@ -7,7 +7,11 @@ export interface RouterState {
   configToId: [RouteConfig, number][],
   configs: {
     [key: string]: NormalizedRouteConfig;
-  }
+  },
+  targetUrl: string | null,
+  previousUrl: string | null,
+  targetState: number[] | null,
+  previousState: number[] | null
 }
 
 export class RouterStore extends BaseStore<RouterState> {
@@ -34,6 +38,11 @@ export class RouterStore extends BaseStore<RouterState> {
     return configs.map(config => {
       return this.addConfig(config);
     });
+  }
+
+  setTargetUrl(url: string) {
+    const state = this.getState();
+    this.state = {...state, previousUrl: state.targetUrl, targetUrl: url};
   }
 }
 

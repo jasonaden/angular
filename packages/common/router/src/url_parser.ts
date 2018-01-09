@@ -32,11 +32,6 @@ export interface UrlState {
   queryParams: {[key: string]: string | string[]} | null;
   fragment: string | null;
   segments: UrlSegment[];
-
-  // configToId: [RouteConfig, number][],
-  // configs: {
-  //   [key: string]: NormalizedRouteConfig;
-  // }
 }
 
 export interface UrlPart {
@@ -44,10 +39,6 @@ export interface UrlPart {
   raw: string;
   params: {[key: string]: string | string[]};
   children: number[];
-}
-
-export class UrlStore extends BaseStore<UrlState> {
-
 }
 
 export function parseUrl(url: string): UrlState {
