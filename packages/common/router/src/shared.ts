@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {InjectionToken} from '@angular/core';
+import {Type, InjectionToken} from '@angular/core';
 
 /**
  * @whatItDoes Name of the primary outlet.
@@ -30,10 +30,10 @@ export type Params = {
 export interface RouteState {
   url: {path: string, parameters: {[key: string]: string | string[]}}[];
   params: Params;
-  queryParams: Params;
-  fragment: string;
+  // queryParams: Params;
+  // fragment: string;
   outlet: string;
-  config: number;
+  configPath: number[];
 }
 
 

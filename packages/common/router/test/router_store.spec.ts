@@ -14,8 +14,7 @@ describe('RouterStore', () => {
   let state: RouterState;
   let store: RouterStore;
   const root: RouterState = {
-    configToId: [],
-    configs: {},
+    configs: [],
     targetUrl: null,
     previousUrl: null,
     targetState: null,
@@ -36,12 +35,9 @@ describe('RouterStore', () => {
 
     const state = store.getState();
 
-    const normalizedConfig = getConfig(state, config[0]) !;
-    const id = normalizedConfig.id;
+    const storedConfig = getConfig(state.configs, [0]) !;
 
-    expect(id).toBe(1);
-    expect(normalizedConfig.path).toBe('abc');
-    expect(normalizedConfig.children).toEqual([]);
+    expect(storedConfig.path).toBe('abc');
   });
 
   it('should normalize nested configs', () => {
@@ -54,12 +50,60 @@ describe('RouterStore', () => {
 
     const state = store.getState();
 
-    const parentConfig = getConfig(state, config[0]) !;
-    const childConfig = getConfig(state, config[0].children[0]) !;
+    const parentConfig = getConfig(state.configs, [0]) !;
+    const childConfig = getConfig(state.configs, [0, 0]) !;
 
     expect(parentConfig.path).toEqual('parent');
     expect(childConfig.path).toEqual('child');
-    expect(childConfig.id).toBe(parentConfig.children[0]);
   });
 
+  it('should allow adding configs individually', () => {
+    store.addConfig({path: 'parent'});
+
+    const state = store.getState();
+
+    expect(getConfig(state.configs, [0])!.path).toBe('parent');
+  });
+
+  it('should allow adding configs individually after first add', () => {
+    const parentConfig = {path: 'parent'};
+    const childConfig = {path: 'child'};
+    store.addConfig(parentConfig);
+
+    store.addConfig(childConfig, [0]);
+    const state = store.getState();
+
+    expect(getConfig(state.configs, [0])!.path).toBe('parent');
+    expect(getConfig(state.configs, [0, 0])!.path).toBe('child');
+  });
+
+  it('should allow complex adding of configs', () => {
+    const parents = [{path: 'a'}, {path: 'aa'}];
+    const child = {path: 'ab'};
+    const children = [{path: 'aab'}, {path: 'aabb'}];
+    const grandchild = {path: 'aabbc'};
+
+    store.addConfigs(parents);
+    store.addConfig(child, [0]);
+    store.addConfigs(children, [1]);
+    store.addConfig(grandchild, [1, 1]);
+
+    const configs = store.getState().configs;
+
+    expect(configs).toEqual([
+      {path: 'a', children: [{path: 'ab'}]},
+      {path: 'aa', children: [
+        {path: 'aab'},
+        {path: 'aabb', children: [{path: 'aabbc'}]}
+      ]},
+
+    ]);
+  });
+
+  it('should error when children are added where they already exist', () => {
+    store.addConfig({path: 'parent', children: [{path: 'child'}]});
+
+    expect(() => store.addConfig({path: 'sibling'}, [0]))
+      .toThrowError('Child configs already exist at targetPath: 0');;
+  });
 });

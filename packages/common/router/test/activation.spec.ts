@@ -9,12 +9,11 @@
 import {RouteConfig} from '../src/config';
 import { RouterState, RouterStore } from "../src/router_store";
 
-fdescribe('Activation', () => {
+describe('Activation', () => {
   let state: RouterState;
   let store: RouterStore;
   const root: RouterState = {
-    configToId: [],
-    configs: {},
+    configs: [],
     targetUrl: null,
     previousUrl: null,
     targetState: null,
@@ -27,7 +26,7 @@ fdescribe('Activation', () => {
   describe('activateRoute', () => {
     it('should activate a simple router state', () => {
       store.addConfigs([{
-        path: ''
+        path: 'p'
       }]);
       store.setTargetUrl('');
     });

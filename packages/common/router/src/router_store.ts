@@ -2,42 +2,47 @@
 import {Params} from './shared';
 import {RouteConfig, NormalizedRouteConfig} from './config';
 import {BaseStore} from './base_store';
+import {isEqualArray, first} from './helpers/collection';
 
 export interface RouterState {
-  configToId: [RouteConfig, number][],
-  configs: {
-    [key: string]: NormalizedRouteConfig;
-  },
+  configs: RouteConfig[],
   targetUrl: string | null,
   previousUrl: string | null,
   targetState: number[] | null,
   previousState: number[] | null
 }
 
+function addToChild(configs: RouteConfig[], newConfigs: RouteConfig[], targetPath: number[], currentPath: number[] = []): RouteConfig[] {
+  if (isEqualArray(targetPath, currentPath)) {
+    if (configs.length)
+      throw new Error('Child configs already exist at targetPath: ' + targetPath.join());
+    return [...newConfigs];
+  }
+  const invalidTargetMsg = 'Invalid targetPath: ' + targetPath.join();
+
+  const nextChildIdx = first(targetPath.slice(currentPath.length));
+  if (nextChildIdx == null) throw new Error(invalidTargetMsg);
+
+  const nextChild = configs[nextChildIdx];
+  if (!nextChild) throw new Error(invalidTargetMsg);
+
+  return [
+    ...configs.slice(0, nextChildIdx),
+    {...nextChild, children: addToChild(nextChild.children || [], newConfigs, targetPath, [...currentPath, nextChildIdx])},
+    ...configs.slice(nextChildIdx + 1)
+  ];
+}
+
 export class RouterStore extends BaseStore<RouterState> {
 
-  addConfig(config: RouteConfig): number {
-    const id = this.nextId();
-
-    let normalized: NormalizedRouteConfig = {
-      ...config,
-      id,
-      children: this.addConfigs(config.children || [])
-    };
-
+  addConfig(config: RouteConfig, parentPath: number[] = []) {
     let state = this.getState();
-    this.state = {
-      ...state,
-      configToId: [...state.configToId, [config, id]],
-      configs: {...state.configs, [id]: normalized}
-    };
-    return id;
+    this.state = {...state, configs: addToChild(state.configs, [config], parentPath)};
   }
 
-  addConfigs(configs: RouteConfig[]): number[] {
-    return configs.map(config => {
-      return this.addConfig(config);
-    });
+  addConfigs(configs: RouteConfig[], parentPath: number[] = []) {
+    const state = this.getState();
+    this.state = {...state, configs: addToChild(state.configs, configs, parentPath)};
   }
 
   setTargetUrl(url: string) {
@@ -46,11 +51,21 @@ export class RouterStore extends BaseStore<RouterState> {
   }
 }
 
-export function getConfig(state: RouterState, idOrConfig: number | RouteConfig): NormalizedRouteConfig|null {
-  if (typeof idOrConfig === 'number') {
-    return state.configs[idOrConfig] || null;
+export function getConfig(routes: RouteConfig[], path: number[]): RouteConfig|null {
+  if (!path.length) return null;
+
+  const errMsg = `No config available at path: ${path}`;
+
+  const selectedRoute = routes[path[0]];
+
+  if (!selectedRoute) throw new Error(errMsg);
+
+  if (path.length > 1) {
+    if (!selectedRoute.children) {
+      throw new Error(errMsg);
+    }
+    return getConfig(selectedRoute.children, path.slice(1));
   } else {
-    const tuple = state.configToId.find(tuple => tuple[0] === idOrConfig);
-    return tuple ? getConfig(state, tuple[1]) : null;
+    return selectedRoute;
   }
 }

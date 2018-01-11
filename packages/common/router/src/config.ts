@@ -1,3 +1,4 @@
+import {Type} from '@angular/core';
 
 /**
  *
@@ -8,9 +9,9 @@ export interface RouteConfig {
   redirectTo?: string;
   outlet?: string;
   children?: RouteConfig[];
+  component?: Type<any>;
   // loadChildren?: (() => Promise<Type<any>>);
   // matcher?: UrlMatcher;
-  // component?: Type<any>;
   // canActivate?: any[];
   // canActivateChild?: any[];
   // canDeactivate?: any[];
@@ -28,14 +29,14 @@ export interface RouteConfig {
 
 export interface NormalizedRouteConfig {
   id: number;
-  children: number[];
   path?: string;
   pathMatch?: string;
   redirectTo?: string;
   outlet?: string;
+  children: number[];
+  component?: Type<any>;
   // loadChildren?: (() => Promise<Type<any>>);
   // matcher?: UrlMatcher;
-  // component?: Type<any>;
   // canActivate?: any[];
   // canActivateChild?: any[];
   // canDeactivate?: any[];
