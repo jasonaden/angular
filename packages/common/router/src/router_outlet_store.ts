@@ -6,11 +6,19 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {ComponentFactoryResolver, ComponentRef, Type} from '@angular/core';
 
+import {ComponentFactoryResolver, ComponentRef, Type} from '@angular/core';
+import {BaseStore} from './base_store';
 import {RouterOutlet} from './directives/router_outlet';
 import {RouteState} from './shared';
 
+export interface RouterOutletState {
+
+}
+
+export class RouterOutletStore extends BaseStore<{}> {
+
+}
 
 /**
  * Store contextual information about a {@link RouterOutlet}

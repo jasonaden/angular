@@ -4,6 +4,4 @@ export class BaseStore<T> {
   constructor(protected state: T) {}
 
   getState() { return this.state; }
-
-  protected nextId() { return ++this._nextId; }
 }

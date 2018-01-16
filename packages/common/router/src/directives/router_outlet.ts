@@ -8,7 +8,7 @@
 
 import {Attribute, Type, ChangeDetectorRef, ComponentFactoryResolver, ComponentRef, Directive, EventEmitter, Injector, OnDestroy, OnInit, Output, ViewContainerRef} from '@angular/core';
 
-import {ChildrenOutletContexts} from '../router_outlet_context';
+import {ChildrenOutletContexts} from '../router_outlet_store';
 import {RouteState, RouteStateToken, PRIMARY_OUTLET} from '../shared';
 
 /**
