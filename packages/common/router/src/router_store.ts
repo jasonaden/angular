@@ -2,6 +2,7 @@
 import {Params} from './shared';
 import {RouteConfig, NormalizedRouteConfig} from './config';
 import {BaseStore} from './base_store';
+import {RouterOutlet} from './directives/router_outlet';
 import {isEqualArray, first} from './helpers/collection';
 
 export interface RouterState {
@@ -9,28 +10,8 @@ export interface RouterState {
   targetUrl: string | null,
   previousUrl: string | null,
   targetState: number[] | null,
-  previousState: number[] | null
-}
-
-function addToChild(configs: RouteConfig[], newConfigs: RouteConfig[], targetPath: number[], currentPath: number[] = []): RouteConfig[] {
-  if (isEqualArray(targetPath, currentPath)) {
-    if (configs.length)
-      throw new Error('Child configs already exist at targetPath: ' + targetPath.join());
-    return [...newConfigs];
-  }
-  const invalidTargetMsg = 'Invalid targetPath: ' + targetPath.join();
-
-  const nextChildIdx = first(targetPath.slice(currentPath.length));
-  if (nextChildIdx == null) throw new Error(invalidTargetMsg);
-
-  const nextChild = configs[nextChildIdx];
-  if (!nextChild) throw new Error(invalidTargetMsg);
-
-  return [
-    ...configs.slice(0, nextChildIdx),
-    {...nextChild, children: addToChild(nextChild.children || [], newConfigs, targetPath, [...currentPath, nextChildIdx])},
-    ...configs.slice(nextChildIdx + 1)
-  ];
+  previousState: number[] | null,
+  outlets: {[key: string]: RouterOutlet}
 }
 
 export class RouterStore extends BaseStore<RouterState> {
@@ -68,4 +49,30 @@ export function getConfig(routes: RouteConfig[], path: number[]): RouteConfig|nu
   } else {
     return selectedRoute;
   }
+}
+
+function addToChild(
+    configs: RouteConfig[], newConfigs: RouteConfig[], targetPath: number[],
+    currentPath: number[] = []): RouteConfig[] {
+  if (isEqualArray(targetPath, currentPath)) {
+    if (configs.length)
+      throw new Error('Child configs already exist at targetPath: ' + targetPath.join());
+    return [...newConfigs];
+  }
+  const invalidTargetMsg = 'Invalid targetPath: ' + targetPath.join();
+
+  const nextChildIdx = first(targetPath.slice(currentPath.length));
+  if (nextChildIdx == null) throw new Error(invalidTargetMsg);
+
+  const nextChild = configs[nextChildIdx];
+  if (!nextChild) throw new Error(invalidTargetMsg);
+
+  return [
+    ...configs.slice(0, nextChildIdx), {
+      ...nextChild,
+      children: addToChild(
+          nextChild.children || [], newConfigs, targetPath, [...currentPath, nextChildIdx])
+    },
+    ...configs.slice(nextChildIdx + 1)
+  ];
 }

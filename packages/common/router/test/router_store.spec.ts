@@ -18,7 +18,8 @@ describe('RouterStore', () => {
     targetUrl: null,
     previousUrl: null,
     targetState: null,
-    previousState: null
+    previousState: null,
+    outlets: {}
   };
 
   beforeEach(() => {
