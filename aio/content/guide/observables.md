@@ -1,6 +1,22 @@
-# Observables
+ # Observables
 
-Observables support passing messages between publishers and subscribers in your application. This provides a nice decoupling between the producer and consumer of the messages.
+Observables provide support for passing messages between publishers and subscribers in your application. Observables offer significant benefits over other techniques for event handling, asynchronous programming, and handling multiple values. 
+
+Observables are declarative -- that is, you define a function for publishing values, but it is not executed until a consumer subscribes to it. The subscribed consumer then receives notifications until the function completes, or they unsubscribe. 
+
+ An Observable can deliver multiple values of any type -- literals, messages, or events, depending on the context. The API for receiving values is the same whether the values are delivered synchronously or asynchronously. Because setup and teardown logic are both handled by the Observable, your application code only needs to worry about subscribing to consume values, and when done, unsubscribing. Whether the stream was keystrokes, an HTTP response, or an interval timer, the interface for listening to values and stopping listening is the same.
+
+ Because of these advantages, Observables are used extensively within Angular, and are recommended for app development as well.
+
+## Basic terms 
+
+As a publisher, you create an `Observable` object that defines a *subscription* method. This is the function that is executed when a consumer calls the `subscribe()` method. The subscription method defines how to obtain or generate values or messages to be published.
+
+To execute the Observable and begin receiving notifications, you call the Observable object's `subscribe()` method, passing an *observer*.  This is a JavaScript object that defines the handlers for the notification you receive. The method returns a `Subscription` object, which has an `unsubscribe()` method that you call to stop receiving notifications.
+
+
+
+.
 
 Here's an example of how an Observable could be used to provide geolocation updates. This example demonstrates the basic usage model:
 
@@ -53,9 +69,7 @@ setTimeout(() => {
 }, 10000);
 ```
 
-An Observable delivers values of any type -- literals, messages, or events, depending on the context. The API for receiving values is the same whether the values are delivered synchronously or asynchronously.
 
-Observables offer significant benefits over typical methods of asynchronous programming. One of the most obvious advantages is that setup and teardown logic are both handled by the Observable. This means your application code only needs to worry about subscribing to consume values, and when done, unsubscribing. Whether the stream was keystrokes, an HTTP response, or an interval timer, the interface for listening to values and stopping listening is the same.
 
 ## Defining Observers
 
@@ -114,11 +128,11 @@ In either case, a next handler is required. The error and complete handlers are 
 
 ## Streams
 
-Observables produce values and send them to the `next()` function of an Observer. You could call these values “messages” or “values” or “events” depending on context. Instead, we refer to data published by an Observable as a stream. Any type of value can be represented with an Observable, and the values are published as a stream.
+Observables produce values and send them to the `next()` function of an Observer. You could call these values �messages� or �values� or �events� depending on context. Instead, we refer to data published by an Observable as a stream. Any type of value can be represented with an Observable, and the values are published as a stream.
 
 ## Creating Observables
 
-Use the Observable constructor to create an Observable stream of any type. The constructor takes as its argument a Subscriber function to run when the Observable’s `subscribe()` method executes. A subscriber function receives an Observer, and can publish values to the Observer's `next()` method.
+Use the Observable constructor to create an Observable stream of any type. The constructor takes as its argument a Subscriber function to run when the Observable�s `subscribe()` method executes. A subscriber function receives an Observer, and can publish values to the Observer's `next()` method.
 
 For example, to create an Observable equivalent to the `Observable.of(1, 2, 3)` above, you could do something like this:
 
@@ -187,9 +201,9 @@ const subscription = fromEvent(nameInput, 'keydown')
 
 ## Multicasting
 
-One feature of Observables is they don’t do anything until a subscription happens. In the previous examples, you can see that no event handlers are wired up and no values delivered until you subscribe to the Observable. But what happens when there are two subscriptions? A typical Observable creates a new, independent execution for each subscribed observer. If you have an Observable that keeps a list of subscribers, it can broadcast its values to all of them. This is known as multicasting.
+One feature of Observables is they don�t do anything until a subscription happens. In the previous examples, you can see that no event handlers are wired up and no values delivered until you subscribe to the Observable. But what happens when there are two subscriptions? A typical Observable creates a new, independent execution for each subscribed observer. If you have an Observable that keeps a list of subscribers, it can broadcast its values to all of them. This is known as multicasting.
 
-Let’s look at an example, similar to the one above that counts from 1 to 3. But in this example we’ll introduce a 1 second delay between each number being emitted:
+Let�s look at an example, similar to the one above that counts from 1 to 3. But in this example we�ll introduce a 1 second delay between each number being emitted:
 
 ```
 function sequenceSubscriber(observer) {
@@ -260,9 +274,9 @@ setTimeout(() => {
 // (at 3.5 seconds): 2nd sequence finished
 ```
 
-What if this isn’t the desired behavior? What if instead you want each subscription to get the same values if values have already started emitting? This might be the case with something like an Observable of clicks on the document object. You often wouldn’t want to register multiple listeners on document, but instead just reuse the first listener and send values out to each subscriber.
+What if this isn�t the desired behavior? What if instead you want each subscription to get the same values if values have already started emitting? This might be the case with something like an Observable of clicks on the document object. You often wouldn�t want to register multiple listeners on document, but instead just reuse the first listener and send values out to each subscriber.
 
-This is called “multicasting”. When creating an Observable you should determine how you want that Observable to be used and whether or not you want to multicast it’s values. Changing the Observable above to be multicasted could look something like this:
+This is called �multicasting�. When creating an Observable you should determine how you want that Observable to be used and whether or not you want to multicast it�s values. Changing the Observable above to be multicasted could look something like this:
 
 ```
 function multicastSequenceSubscriber() {
