@@ -233,11 +233,6 @@
               "tooltip": ""
             },
             {
-              "url": "guide/common-operators",
-              "title": "Common Operators",
-              "tooltip": ""
-            },
-            {
               "url": "guide/practical-observable-usage",
               "title": "Practical Usage",
               "tooltip": ""
@@ -249,7 +244,7 @@
             },
             {
               "url": "guide/comparing-observables",
-              "title": "Comparing to Promises, Arrays, and Events",
+              "title": "Compare to Other Techniques",
               "tooltip": ""
             }
           ]

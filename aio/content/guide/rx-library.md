@@ -4,26 +4,25 @@ Reactive programming is an asynchronous programming paradigm concerned with data
 
 RxJS provides an implementation of the Observable type, which is needed until Observable becomes part of the language and until browsers support it. But the most important parts of the library are utility functions for creating and working with Observables. These utility functions can be used for:
 
-* Convert existing async APIs (Promises, event handlers, etc) into Observables
+* Converting existing code for async operations into Observables
 * Iterating through the values in a stream
-* Mapping values to a different type of value
+* Mapping values to different types
 * Filtering streams
-* Composition of multiple streams
+* Composing multiple streams
 
-## Observable Creation Functions
+## Observable creation functions
 
-RxJS offers a number of functions that can be used to create new Observables. These functions can simplify the process of creating Observables from things such as events, timers, promises, etc. For example:
+RxJS offers a number of functions that can be used to create new Observables. These functions can simplify the process of creating Observables from things such as events, timers, promises, and so on. For example:
 
-### Observable from a Promise
+*  Create an Observable from a Promise 
 
 ```
-import { fromPromise } from 'rxjs/observable/fromPromise;
+import { fromPromise } from 'rxjs/observable/fromPromise';
 import { interval } from 'rxjs/observable/interval';
-
 
 // Create an Observable out of a promise
 const data = fromPromise(fetch('/api/endpoint'));
-
+// Subscribe to begin listening for async result
 data.subscribe({
  next(response) { console.log(response); },
  error(err) { console.error('Error: ' + err); },
@@ -31,50 +30,52 @@ data.subscribe({
 });
 ```
 
-### Observable from a Counter
+* Create an Observable from a counter
 
 ```
-// Observable that will publish a value on an interval
+// Create an Observable that will publish a value on an interval
 const secondsCounter = interval(1000);
-
+// Subscribe to begin publishing values
 secondsCounter.subscribe(n =>
   console.log(`It's been ${n} seconds since subscribing!`));
 ```
 
-### Observable from an Event
+* Create an Observable from an event
 
 ```
 import { fromEvent } from 'rxjs/observable/fromEvent';
-
 const el = document.getElementById('my-element');
 
 // Create an Observable that will publish mouse movements
 const mouseMoves = fromEvent(el, 'mousemove');
 
+// Subscribe to start listening for mouse-move events
 const subscription = mouseMoves.subscribe(evt => {
   // Log coords of mouse movements
   console.log(`Coords: ${evt.clientX} X ${evt.clientY}`);
 
   // When the mouse is over the upper-left of the screen,
-  // unsubscribe (stop listening for mouse movements)
+  // unsubscribe to stop listening for mouse movements
   if (evt.clientX < 40 && evt.clientY < 40) {
     subscription.unsubscribe();
   }
 });
 ```
 
-### Observable AJAX Request
+* Create an Observable that creates an AJAX Request 
 
 ```
-// Will make AJAX request once subscribed to
+// Create an Observable that will create an AJAX request
 const apiData = ajax('/api/data');
-
+// Subscribe to create the request
 apiData.subscribe(res => console.log(res.status, res.response));
 ```
 
 ## Operators
 
-An operator is a pure function that takes configuration options, returning a function that takes a source Observable. When executing this returned function, the operator observes the source Observable’s emitted values, transforms them, and returns a new Observable of those transformed values. This is probably most easily demonstrated with a simple example:
+Operators are functions that build on the Observables foundation to enable sophisticated manipulation of collections. For example, RxJS defines operators for operations such as `map()`, `filter()`, `concat()`, and `flatMap()`.
+
+An operator takes configuration options, and returns another function which takes a source Observable. When executing this returned function, the operator observes the source Observable’s emitted values, transforms them, and returns a new Observable of those transformed values. Here is a simple example:
 
 ```
 import { map } from 'rxjs/operators';
@@ -91,7 +92,11 @@ squaredNums.subscribe(x => console.log(x));
 // 9
 ```
 
-Operators can be linked together using the pipe() function. Pipe is a functional programming concept allowing you to combine multiple functions into a single function. Pipe takes as its arguments the functions you want to combine together. It returns a new function that, when executed, will run the composed functions in sequence. Here’s an example:
+You can use _pipes_ to link operators together. Pipes let you combine multiple functions into a single function. The `pipe()` function takes as its arguments the functions you want to combine, and returns a new function that, when executed, runs the composed functions in sequence. 
+
+A set of operators applied to an Observable is a recipe &mdash; that is, a set of instructions for producing the values you’re interested in. By itself, the recipe doesn’t do anything. You need to call `subscribe()` to produce a result through the recipe.
+
+Here’s an example:
 
 ```
 import { pipe } from 'rxjs/util/pipe';
@@ -106,15 +111,14 @@ const squareOddVals = pipe(
   map(n => n * n)
 );
 
-// Create an Observable that, when subscribed
-// to, will run the filter and map functions
+// Create an Observable that will run the filter and map functions
 const squareOdd = squareOddVals(nums)
 
-// Must subscribe to get values
+// Suscribe to run the combined functions
 squareOdd.subscribe(x => console.log(x));
 ```
 
-The `pipe()` function is also a method on the RxJS Observable, so the above could be shortened as follows:
+The `pipe()` function is also a method on the RxJS Observable, so you use this shorter form to define the same operation:
 
 ```
 import { filter } from 'rxjs/operators/filter';
@@ -126,17 +130,33 @@ const squareOdd = Observable.of(1, 2, 3, 4, 5)
     map(n => n * n)
   );
 
-// Must subscribe to get values
+// Subscribe to get values
 squareOdd.subscribe(x => console.log(x));
 ```
+### Common operators
 
-A set of operators applied to an Observable could be called a “recipe”. Basically a set of instructions for producing the values you’re interested in. But by itself the recipe doesn’t do anything. You need to call `subscribe()` to produce a result through the recipe.
+RxJS provides many operators (over 150 of them), but only a handful are used frequently. Here is a list of common operators; for usage examples, see  [RxJS 5 Operators By Example](https://github.com/btroncone/learn-rxjs/blob/master/operators/complete.md) in RxJS documentation. 
+
+<div class="l-sub-section">
+  Note that, for Angular apps, we prefer combining operators with pipes, rather than chaining. Chaining is used in many RxJS examples.
+</div>
+
+| Area | Operators |  
+| :------------| :----------| 
+| Creation |  `from`, `fromPromise`,`fromEvent`, `of` | 
+| Combination | `combineLatest`, `concat`, `merge`, `startWith` , `withLatestFrom`, `zip` | 
+| Filtering | `debounceTime`, `distinctUntilChanged`, `filter`, `take`, `takeUntil` | 
+| Transformation | `bufferTime`, `concatMap`, `map`, `mergeMap`, `scan`, `switchMap` |  
+| Utility | `tap` | 
+| Multicasting | `share` |  
 
 ## Error Handling
 
-While the `subscribe()` method on an Observable allows for handling of errors, often times you want to handle known errors in the Observable recipe. For instance, you have an Observable that makes an API request and maps to the response from the server. But if the server returns an error or the value doesn’t exist, error is produced. You might want to catch this error and supply a default value so your stream continues to process values rather than erroring out.
+In addition to the `error()` handler that you provide on subscription, RxJS provides the `catchError` operator that lets you handle known errors in the Observable recipe. 
 
-RxJS provides the `catchError` operator, which can be used like this:
+For instance, suppose you have an Observable that makes an API request and maps to the response from the server. If the server returns an error or the value doesn’t exist, an error is produced. If you catch this error and supply a default value, your stream continues to process values rather than erroring out.
+
+Here's an example of using the `catchError` operator to do this:
 
 ```
 import { ajax } from 'rxjs/observable/dom/ajax';
@@ -157,13 +177,13 @@ apiData.subscribe({
 });
 ```
 
-## Retry Failed Observable
+### Retry Failed Observable
 
-The `catchError` operator provides a simple path of recovery, but we can go further. What if you also wanted to retry a failed request? With Observables, this is as easy as adding a new operator, aptly named retry.
+Where the `catchError` operator provides a simple path of recovery, the `retry` operator lets you retry a failed request. 
 
-Once importing the retry operator, you can use it before the `catchError` operator. This will cause the original source Observable to be re-subscribed to, meaning it will re-run the full sequence of actions that resulted in the error. If this includes an HTTP request, it will retry that HTTP request.
+Use the `retry` operator before the `catchError` operator. It resubscribes to the original source Observable, which can then re-run the full sequence of actions that resulted in the error. If this includes an HTTP request, it will retry that HTTP request.
 
-Converting the above example to use retry:
+The following converts the previous example to retry the request before catching the error:
 
 ```
 import { ajax } from 'rxjs/observable/dom/ajax';
@@ -183,12 +203,15 @@ apiData.subscribe({
   error(err) { console.log('errors already caught... will not run'); }
 });
 ```
+<div class="l-sub-section">
 
-As a general rule, you don't use the retry operator on all types of requests. Requests such as authentication wouldn't be retried as those requests should be initiated by user action. We don't want to lock out user accounts with repeated login requests uninitiated by our users.
+   Do not retry **authentication** requests, since these should only be initiated by user action. We don't want to lock out user accounts with repeated login requests that the user has not initiated.
 
-## Naming Convention
+</div>
 
-Because Angular applications are mostly written in TypeScript, you will generally know when a variable is an Observable. While the Angular framework generally does not employ a naming convention for Observables, in online examples and applications, you will often see Observables named with a trailing “$” sign.
+## Naming conventions for Observables
+
+Because Angular applications are mostly written in TypeScript, you will typically know when a variable is an Observable. While the Angular framework generally does not employ a naming convention for Observables, in online examples and applications, you will often see Observables named with a trailing “$” sign.
 
 This can be useful when scanning through code and looking for Observable values. Also, if you want a property to store the most recent value from an Observable, it can be convenient to simply use the same name with or without the “$”.
 
