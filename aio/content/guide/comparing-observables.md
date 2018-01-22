@@ -17,64 +17,73 @@ Observables are often compared to Promises. Here are some key differences:
 * Observables `subscribe()` is responsible for handling errors. Promises push errors to the child Promises. This makes Observables useful for centralized and predictable error handling.
 
  
-### Creation
+### Creation and subscription 
 
-* **Observables** are declarative. The declared computation is not executed until a consumer subcribes.
-```new Observable((observer) => { subscriber_fn });```
+* Observables are not executed until a consumer subcribes. The `subscribe()` executes the defined behavior once, and it can be called again. Each subscription has its own computation. Resubscription causes recomputation of values.
 
-* **Promises** execute immediately, and just once. The computation of the result is initiated at promise creation time.
-``` new Promise((resolve, reject) => { executer_fn });``` 
-  * There is no way to restart work.
-  * All `then` clauses (subscriptions) share the same computation. 
-
-### Subscription 
-
-* **Observables** initiate computation when you call `subscribe()`. The call executes the defined behavior once, and it can be called again. 
-<pre>observable.subscribe(() => {
+```
+// declare a publishing operation
+new Observable((observer) => { subscriber_fn });
+// initiate execution
+observable.subscribe(() => {
       // observer handles notifications
-    });</pre>
-  * Each subscription has its own computation.
-  * Resubscription causes recomputation of values. 
+    });
+```
+  
+* Promises execute immediately, and just once. The computation of the result is initiated at promise creation time. There is no way to restart work. All `then` clauses (subscriptions) share the same computation. 
 
-* **Promises** initiate computation of the result at creation time.
-<pre>promise.then((value) => {
+``` 
+// initiate execution
+new Promise((resolve, reject) => { executer_fn });
+// handle return value
+promise.then((value) => {
       // handle result here
-    });</pre>
-  * There is no way to restart work.
-  * All `then` clauses (subscriptions) share the same computation. 
-     
+    });
+  
+``` 
+
 ### Chaining 
  
-* **Observables** differentiate between transformation function such as a map and subscription. Only subscription activates the subscriber function to start computing the values.
-<pre>observable.map((v) => 2*v);</pre>
+* Observables differentiate between transformation function such as a map and subscription. Only subscription activates the subscriber function to start computing the values.
 
-* **Promises** do not differentiate between the last `.then` claues (equivalent to subscription) and intermediate .then clauses (equivalent to map).
-<pre>promise.then((v) => 2*v);</pre>
+`observable.map((v) => 2*v);` 
 
-### Cancellation
+* Promises do not differentiate between the last `.then` claues (equivalent to subscription) and intermediate `.then` clauses (equivalent to map).
 
-* **Observable** subscriptions are cancellable.
-<pre>const sub = obs.subscribe(...);
-sub.unsubscribe();</pre>
-Unsubscribing removes the listener from receiving further values, and notifies the subscriber function to cancel work. 
+ `promise.then((v) => 2*v);`
 
-* **Promise** is not cancellable.
+### Cancellation 
 
-### Error handling
+* Observable subscriptions are cancellable. Unsubscribing removes the listener from receiving further values, and notifies the subscriber function to cancel work.
 
-* **Observable** execution errors are delivered to the subscriber's error handler and the subscriber automatically unsubscribes from the observable.
-<pre>obs.subscribe(() => {
+```
+const sub = obs.subscribe(...);
+sub.unsubscribe();
+```
+
+* Promisees are not cancellable.
+
+### Error handling 
+
+* Observable execution errors are delivered to the subscriber's error handler and the subscriber automatically unsubscribes from the observable.
+
+```
+obs.subscribe(() => {
   throw Error('my error');
-})</pre>
+})
+```
  
-* **Promise** push errors to the child Promises.
-<pre>promise.then(() => {
+* Promises push errors to the child Promises.
+
+```
+promise.then(() => {
       throw Error('my error');
-    })</pre>
+    })
+```
 
 ### Cheat sheet
 
-Here are some code samples that illustrate how the same kind of operation is defined using Observables and Promises.
+The following code snippets illustrate how the same kind of operation is defined using Observables and Promises.
 
 <table>
   <th>
@@ -115,7 +124,7 @@ Here are some code samples that illustrate how the same kind of operation is def
   <tr>
     <td>Unsubscribe</td>
     <td><pre>sub.unsubscribe();</pre></td>
-    <td>Implied by promise resolution</td>
+    <td>Implied by promise resolution.</td>
   </tr>
 </table>
 
