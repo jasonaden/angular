@@ -2,15 +2,19 @@
 
 Angular makes use of Observables as an interface to handle a variety of common asynchronous operations. For example:
 
-* The EventEmitter extends Observable.
+* The `EventEmitter` class extends `Observable`.
 * The HTTP module uses Observables to handle AJAX requests and responses.
-* The Forms and Router modules use Observables to listen for and respond to user-input events.
+* The Router and Forms modules use Observables to listen for and respond to user-input events.
 
 ## Event Emitter
 
-Angular provides an EventEmitter class that’s used when publishing values from a Component through the `@Output()` decorator. Angular’s EventEmitter class extends from Observable, but adds a method `emit()` so it can send arbitrary values. Calling the `emit()` function will cause any subscribed Observers’ `next()` method to be called with the same value.
+Angular provides an `EventEmitter` class that is used when publishing values from a Component through the `@Output()` decorator. `EventEmitter` extends `Observable`, adding an `emit()` method so it can send arbitrary values. When you call `emit()`, it passes the emitted value to the `next()` method of any subscribed observer.
 
-The example on the [EventEmitter](https://angular.io/api/core/EventEmitter)] docs page is a good example of it’s usage:
+A good example of usage can be found on the [EventEmitter](https://angular.io/api/core/EventEmitter) docs page. Here is the example component that listens for open and close events:
+
+`<zippy (open)="onOpen($event)" (close)="onClose($event)"></zippy>`
+
+Here is the component definition: 
 
 ```
 @Component({
@@ -39,15 +43,11 @@ export class Zippy {
 }
 ```
 
-And using this component:
-
-`<zippy (open)="onOpen($event)" (close)="onClose($event)"></zippy>`
-
 ## HTTP
-Angular’s HttpClient returns Observables from it’s HTTP method calls. For instance, `http.get(‘/api’)` will return an Observable. This provides several advantages over Promise-based HTTP APIs:
+Angular’s `HttpClient` returns Observables from HTTP method calls. For instance, `http.get(‘/api’)` returns an Observable. This provides several advantages over Promise-based HTTP APIs:
 
-* Does not mutate the server response (as you can through chained `.then()` calls on Promises). Instead you can use a series of operators to provide values in the shape you need.
-* HTTP requests are cancellable through the unsubscribe() method.
+* Observables do not mutate the server response (as can occur through chained `.then()` calls on Promises). Instead, you can use a series of operators to transform values as needed.
+* HTTP requests are cancellable through the `unsubscribe()` method.
 * Requests can be configured to get progress event updates.
 * Failed requests can be retried easily.
 
@@ -72,7 +72,7 @@ export class AsyncObservablePipeComponent {
 
 ## Router
 
-[`Router.events`](https://angular.io/api/router/Router#events) provides events as Observables, so you can use the `filter()` from RxJS to look for events of interest, and subscribe to them in order to make decisions based on the sequence of events in the navigation process:
+[`Router.events`](https://angular.io/api/router/Router#events) provides events as Observables. You can use the `filter()` operator from RxJS to look for events of interest, and subscribe to them in order to make decisions based on the sequence of events in the navigation process. Here's an example:
 
 ```
 import { Router } from '@angular/router';
@@ -101,7 +101,7 @@ export class RoutableComponent implements OnInit {
 }
 ```
 
-The [ActivatedRoute](https://angular.io/api/router/ActivatedRoute) is an injected router service that makes use of Observables to get information about a route path and parameters. For example, `ActivateRoute.url` contains an Observable that reports the route path or paths:
+The [ActivatedRoute](https://angular.io/api/router/ActivatedRoute) is an injected router service that makes use of Observables to get information about a route path and parameters. For example, `ActivateRoute.url` contains an Observable that reports the route path or paths. Here's an example:
 
 ```
 import { Component, OnInit } from '@angular/core';
