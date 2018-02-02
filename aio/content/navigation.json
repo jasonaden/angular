@@ -238,11 +238,6 @@
               "tooltip": ""
             },
             {
-              "url": "guide/testing-observables",
-              "title": "Testing",
-              "tooltip": ""
-            },
-            {
               "url": "guide/comparing-observables",
               "title": "Compare to Other Techniques",
               "tooltip": ""

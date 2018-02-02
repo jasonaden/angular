@@ -50,19 +50,3 @@ ajax('/api/endpoint')
   .let(backoff(3, 250))
   .subscribe(data => handleData(data));
 ```
-
-## Managing Subscriptions
-
-TBD. Original content [here](https://docs.google.com/document/d/1gGP5sqWNCHAWWV_GLdZQ1XyMO4K-CHksUxux0BFtVxk/edit#heading=h.3333ma4ei9ne).
-
-## Async Pipe
-
-TBD. Original content [here](https://docs.google.com/document/d/1gGP5sqWNCHAWWV_GLdZQ1XyMO4K-CHksUxux0BFtVxk/edit#heading=h.urzvx62pmtlv).
-
-## Sharing observable reference
-
-TBD. Original content [here](https://docs.google.com/document/d/1gGP5sqWNCHAWWV_GLdZQ1XyMO4K-CHksUxux0BFtVxk/edit#heading=h.h3yt29eshbdx).
-
-## Sharing data with a stream
-
-TBD. Original content [here](https://docs.google.com/document/d/1gGP5sqWNCHAWWV_GLdZQ1XyMO4K-CHksUxux0BFtVxk/edit#heading=h.qnk78yf7mowb).

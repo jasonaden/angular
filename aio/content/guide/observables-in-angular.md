@@ -14,7 +14,7 @@ A good example of usage can be found on the [EventEmitter](https://angular.io/ap
 
 `<zippy (open)="onOpen($event)" (close)="onClose($event)"></zippy>`
 
-Here is the component definition: 
+Here is the component definition:
 
 ```
 @Component({
@@ -29,8 +29,8 @@ Here is the component definition:
 
 export class Zippy {
   visible: boolean = true;
-  @Output() open: EventEmitter<any> = new EventEmitter();
-  @Output() close: EventEmitter<any> = new EventEmitter();
+  @Output() open = new EventEmitter<any>();
+  @Output() close = new EventEmitter<any>();
 
   toggle() {
     this.visible = !this.visible;
