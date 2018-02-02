@@ -16,70 +16,73 @@ Observables are often compared to Promises. Here are some key differences:
 
 * Observables `subscribe()` is responsible for handling errors. Promises push errors to the child Promises. This makes Observables useful for centralized and predictable error handling.
 
- 
-### Creation and subscription 
+
+### Creation and subscription
 
 * Observables are not executed until a consumer subcribes. The `subscribe()` executes the defined behavior once, and it can be called again. Each subscription has its own computation. Resubscription causes recomputation of values.
 
-```
+<code-example hideCopy>
 // declare a publishing operation
 new Observable((observer) => { subscriber_fn });
 // initiate execution
 observable.subscribe(() => {
       // observer handles notifications
     });
-```
-  
-* Promises execute immediately, and just once. The computation of the result is initiated at promise creation time. There is no way to restart work. All `then` clauses (subscriptions) share the same computation. 
+</code-example>
 
-``` 
+* Promises execute immediately, and just once. The computation of the result is initiated at promise creation time. There is no way to restart work. All `then` clauses (subscriptions) share the same computation.
+
+<code-example hideCopy>
 // initiate execution
 new Promise((resolve, reject) => { executer_fn });
 // handle return value
 promise.then((value) => {
       // handle result here
     });
-  
-``` 
+</code-example>
 
-### Chaining 
- 
+### Chaining
+
 * Observables differentiate between transformation function such as a map and subscription. Only subscription activates the subscriber function to start computing the values.
 
-`observable.map((v) => 2*v);` 
+
+<code-example hideCopy>observable.map((v) => 2*v);</code-example>
+
 
 * Promises do not differentiate between the last `.then` claues (equivalent to subscription) and intermediate `.then` clauses (equivalent to map).
 
- `promise.then((v) => 2*v);`
 
-### Cancellation 
+<code-example hideCopy>promise.then((v) => 2*v);</code-example>
+
+
+### Cancellation
 
 * Observable subscriptions are cancellable. Unsubscribing removes the listener from receiving further values, and notifies the subscriber function to cancel work.
 
-```
+<code-example hideCopy>
 const sub = obs.subscribe(...);
 sub.unsubscribe();
-```
+</code-example>
 
 * Promisees are not cancellable.
 
-### Error handling 
+### Error handling
 
 * Observable execution errors are delivered to the subscriber's error handler and the subscriber automatically unsubscribes from the observable.
 
-```
+<code-example hideCopy>
 obs.subscribe(() => {
   throw Error('my error');
-})
-```
- 
+});
+</code-example>
+
 * Promises push errors to the child Promises.
 
-```
+<code-example hideCopy>
 promise.then(() => {
       throw Error('my error');
-    })
-```
+});
+</code-example>
 
 ### Cheat sheet
 
@@ -163,6 +166,8 @@ button.addEventListener(‘click’, handler);
 button.removeEventListener(‘click’, handler);
 </pre>
     </td>
+  </tr>
+  <tr>
     <td>Subscription</td>
     <td>
 <pre>observable.subscribe(() => {
@@ -293,7 +298,7 @@ An Observables produces values over time, while an Array is created as a static 
   <tr>
     <td><pre>reduce()</pre></td>
     <td>
-      <pre>obs.reduce((s,v)=> s+v, 0)</pre>
+      <pre>obs.scan((s,v)=> s+v, 0)</pre>
       <pre>➞1➞3➞6➞11➞18</pre>
     </td>
     <td>
