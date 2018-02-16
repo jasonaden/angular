@@ -1,20 +1,20 @@
-# Observables Compared to Other Techniques
+# Observables compared to other techniques
 
-You can often use Observables instead of Promises to deliver values asynchronously. Similarly, Observables can take the place of event handlers. Finally, since Observables deliver multiple values, you can use them where you might otherwise build and operate on Arrays.
+You can often use observables instead of promises to deliver values asynchronously. Similarly, observables can take the place of event handlers. Finally, because observables deliver multiple values, you can use them where you might otherwise build and operate on arrays.
 
 Observables behave somewhat differently from the alternative techniques in each of these situations, but offer some significant advantages. Here are detailed comparisons of the differences.
 
-## Observable compared to Promise
+## Observables compared to promises
 
-Observables are often compared to Promises. Here are some key differences:
+Observables are often compared to promises. Here are some key differences:
 
-* Observables are declarative; computation does not start until subscription. Promises execute immediately on creation. This makes Observables useful for defining recipes that can be run whenever you need the result.
+* Observables are declarative; computation does not start until subscription. Promises execute immediately on creation. This makes observables useful for defining recipes that can be run whenever you need the result.
 
-* Observables provide many values. Promises provide one. This makes Observables useful for getting multiple values over time.
+* Observables provide many values. Promises provide one. This makes observables useful for getting multiple values over time.
 
-* Observables differentiate between chaining and subscription. Promises only have `.then()` clauses. This makes Observables useful for creating complex transformation recipes to be used by other part of the system, without causing the work to be executed.
+* Observables differentiate between chaining and subscription. Promises only have `.then()` clauses. This makes observables useful for creating complex transformation recipes to be used by other part of the system, without causing the work to be executed.
 
-* Observables `subscribe()` is responsible for handling errors. Promises push errors to the child Promises. This makes Observables useful for centralized and predictable error handling.
+* Observables `subscribe()` is responsible for handling errors. Promises push errors to the child promises. This makes observables useful for centralized and predictable error handling.
 
 
 ### Creation and subscription
@@ -30,7 +30,7 @@ observable.subscribe(() => {
     });
 </code-example>
 
-* Promises execute immediately, and just once. The computation of the result is initiated at promise creation time. There is no way to restart work. All `then` clauses (subscriptions) share the same computation.
+* Promises execute immediately, and just once. The computation of the result is initiated when the promise is created. There is no way to restart work. All `then` clauses (subscriptions) share the same computation.
 
 <code-example hideCopy>
 // initiate execution
@@ -49,7 +49,7 @@ promise.then((value) => {
 <code-example hideCopy>observable.map((v) => 2*v);</code-example>
 
 
-* Promises do not differentiate between the last `.then` claues (equivalent to subscription) and intermediate `.then` clauses (equivalent to map).
+* Promises do not differentiate between the last `.then` clauses (equivalent to subscription) and intermediate `.then` clauses (equivalent to map).
 
 
 <code-example hideCopy>promise.then((v) => 2*v);</code-example>
@@ -64,11 +64,11 @@ const sub = obs.subscribe(...);
 sub.unsubscribe();
 </code-example>
 
-* Promisees are not cancellable.
+* Promises are not cancellable.
 
 ### Error handling
 
-* Observable execution errors are delivered to the subscriber's error handler and the subscriber automatically unsubscribes from the observable.
+* Observable execution errors are delivered to the subscriber's error handler, and the subscriber automatically unsubscribes from the observable.
 
 <code-example hideCopy>
 obs.subscribe(() => {
@@ -76,7 +76,7 @@ obs.subscribe(() => {
 });
 </code-example>
 
-* Promises push errors to the child Promises.
+* Promises push errors to the child promises.
 
 <code-example hideCopy>
 promise.then(() => {
@@ -86,10 +86,11 @@ promise.then(() => {
 
 ### Cheat sheet
 
-The following code snippets illustrate how the same kind of operation is defined using Observables and Promises.
+The following code snippets illustrate how the same kind of operation is defined using observables and promises.
 
 <table>
   <th>
+    <td>Operation</td>
     <td>Observable</td>
     <td>Promise</td>
   </th>
@@ -131,13 +132,13 @@ The following code snippets illustrate how the same kind of operation is defined
   </tr>
 </table>
 
-## Observable compared to Events API
+## Observables compared to events API
 
-Observables are very similar to event handlers that use the Events API. Both techniques define notification handlers, and use them to process multiple values delivered over time. Subscribing to an Observable is equivalent to adding an event listener. One significant difference is that you can configure an Observable to transform the event before it is passed to the handler.
+Observables are very similar to event handlers that use the events API. Both techniques define notification handlers, and use them to process multiple values delivered over time. Subscribing to an observable is equivalent to adding an event listener. One significant difference is that you can configure an observable to transform an event before passing the event to the handler.
 
-Using Observables to handle events and asynchronous operations can have the advantage of greater consistency in contexts such as HTTP requests.
+Using observables to handle events and asynchronous operations can have the advantage of greater consistency in contexts such as HTTP requests.
 
-Here are some code samples that illustrate how the same kind of operation is defined using Observables and the Events API.
+Here are some code samples that illustrate how the same kind of operation is defined using observables and the events API.
 
 <table>
   <th>
@@ -145,7 +146,7 @@ Here are some code samples that illustrate how the same kind of operation is def
     <td>Events API</td>
   </th>
   <tr>
-    <td>Creation & Cancellation</td>
+    <td>Creation & cancellation</td>
     <td>
 <pre>// Setup
 let clicks$ = fromEvent(buttonEl, ‘click’);
@@ -197,9 +198,9 @@ button.removeEventListener(‘click’, handler);
 </table>
 
 
-## Observable compared to Array
+## Observables compared to arrays
 
-An Observables produces values over time, while an Array is created as a static set of values. In a sense, Observables are asynchronous where Arrays are synchronous. In the following examples, ➞ implies asynchronous value delivery.
+An observable produces values over time. An array is created as a static set of values. In a sense, observables are asynchronous where arrays are synchronous. In the following examples, ➞ implies asynchronous value delivery.
 
 <table>
   <th>
