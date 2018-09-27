@@ -10,7 +10,7 @@ import {Observable} from 'rxjs';
 
 import {Route} from './config';
 import {ActivatedRouteSnapshot, RouterStateSnapshot} from './router_state';
-import {UrlSegment} from './url_tree';
+import {UrlSegment, UrlTree} from './url_tree';
 
 
 /**
@@ -80,7 +80,7 @@ import {UrlSegment} from './url_tree';
  */
 export interface CanActivate {
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot):
-      Observable<boolean>|Promise<boolean>|boolean;
+      Observable<boolean>|Promise<boolean>|boolean|UrlTree;
 }
 
 /**
@@ -160,7 +160,7 @@ export interface CanActivate {
  */
 export interface CanActivateChild {
   canActivateChild(childRoute: ActivatedRouteSnapshot, state: RouterStateSnapshot):
-      Observable<boolean>|Promise<boolean>|boolean;
+      Observable<boolean>|Promise<boolean>|boolean|UrlTree;
 }
 
 /**
@@ -234,7 +234,7 @@ export interface CanActivateChild {
 export interface CanDeactivate<T> {
   canDeactivate(
       component: T, currentRoute: ActivatedRouteSnapshot, currentState: RouterStateSnapshot,
-      nextState?: RouterStateSnapshot): Observable<boolean>|Promise<boolean>|boolean;
+      nextState?: RouterStateSnapshot): Observable<boolean>|Promise<boolean>|boolean|UrlTree;
 }
 
 /**

@@ -26,7 +26,7 @@ import {DefaultRouteReuseStrategy, RouteReuseStrategy} from './route_reuse_strat
 import {RouterConfigLoader} from './router_config_loader';
 import {ChildrenOutletContexts} from './router_outlet_context';
 import {ActivatedRoute, RouterState, RouterStateSnapshot, createEmptyState} from './router_state';
-import {Params, isNavigationCancelingError} from './shared';
+import {Params, isNavigationCancelingError, navigationCancelingError} from './shared';
 import {DefaultUrlHandlingStrategy, UrlHandlingStrategy} from './url_handling_strategy';
 import {UrlSerializer, UrlTree, containsTree, createEmptyUrlTree} from './url_tree';
 
@@ -187,7 +187,7 @@ export type NavigationTransition = {
   targetSnapshot: RouterStateSnapshot | null,
   currentRouterState: RouterState,
   targetRouterState: RouterState | null,
-  guardsResult: boolean | null,
+  guardsResult: boolean | UrlTree | null,
   preActivation: PreActivation | null
 };
 
@@ -492,10 +492,16 @@ export class Router {
               checkGuards(),
 
               tap(t => {
+                const isBool = typeof t.guardsResult === 'boolean';
                 const guardsEnd = new GuardsCheckEnd(
                     t.id, this.serializeUrl(t.extractedUrl), this.serializeUrl(t.urlAfterRedirects),
-                    t.targetSnapshot !, !!t.guardsResult);
+                    t.targetSnapshot !, isBool && t.guardsResult as boolean || false);
                 this.triggerEvent(guardsEnd);
+                if (!isBool) {
+                  this.navigateByUrl(t.guardsResult as UrlTree);
+                  throw navigationCancelingError(
+                      `Redirect to: ${this.urlSerializer.serialize(t.guardsResult as UrlTree)}`);
+                }
               }),
 
               filter(t => {

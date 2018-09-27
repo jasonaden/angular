@@ -14,6 +14,7 @@ import {LoadedRouterConfig, ResolveData, RunGuardsAndResolvers} from './config';
 import {ActivationStart, ChildActivationStart, Event} from './events';
 import {ChildrenOutletContexts, OutletContext} from './router_outlet_context';
 import {ActivatedRouteSnapshot, RouterStateSnapshot, equalParamsAndUrlSegments, inheritedParamsDataResolve} from './router_state';
+import {UrlTree} from './url_tree';
 import {andObservables, forEach, shallowEqual, wrapIntoObservable} from './utils/collection';
 import {TreeNode, nodeChildrenAsMap} from './utils/tree';
 
@@ -45,7 +46,7 @@ export class PreActivation {
     this.setupChildRouteGuards(futureRoot, currRoot, parentContexts, [futureRoot.value]);
   }
 
-  checkGuards(): Observable<boolean> {
+  checkGuards(): Observable<boolean|UrlTree> {
     if (!this.isDeactivating() && !this.isActivating()) {
       return of (true);
     }

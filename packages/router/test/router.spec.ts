@@ -143,7 +143,7 @@ describe('Router', () => {
 
         const p = new PreActivation(futureState, empty, TestBed, (evt) => { events.push(evt); });
         p.initialize(new ChildrenOutletContexts());
-        p.checkGuards().subscribe((x) => result = x, (e) => { throw e; });
+        p.checkGuards().subscribe((x) => result = x as boolean, (e) => { throw e; });
         expect(result).toBe(true);
         expect(events.length).toEqual(2);
         expect(events[0].snapshot).toBe(events[0].snapshot.root);
@@ -176,7 +176,7 @@ describe('Router', () => {
 
         const p = new PreActivation(futureState, empty, TestBed, (evt) => { events.push(evt); });
         p.initialize(new ChildrenOutletContexts());
-        p.checkGuards().subscribe((x) => result = x, (e) => { throw e; });
+        p.checkGuards().subscribe((x) => result = x as boolean, (e) => { throw e; });
 
         expect(result).toBe(true);
         expect(events.length).toEqual(6);
@@ -209,7 +209,7 @@ describe('Router', () => {
         const p =
             new PreActivation(futureState, currentState, TestBed, (evt) => { events.push(evt); });
         p.initialize(new ChildrenOutletContexts());
-        p.checkGuards().subscribe((x) => result = x, (e) => { throw e; });
+        p.checkGuards().subscribe((x) => result = x as boolean, (e) => { throw e; });
 
         expect(result).toBe(true);
         expect(events.length).toEqual(2);
@@ -255,7 +255,7 @@ describe('Router', () => {
         const p =
             new PreActivation(futureState, currentState, TestBed, (evt) => { events.push(evt); });
         p.initialize(new ChildrenOutletContexts());
-        p.checkGuards().subscribe((x) => result = x, (e) => { throw e; });
+        p.checkGuards().subscribe((x) => result = x as boolean, (e) => { throw e; });
 
         expect(result).toBe(true);
         expect(events.length).toEqual(4);

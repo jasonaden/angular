@@ -18,7 +18,13 @@ export function checkGuards(): MonoTypeOperatorFunction<NavigationTransition> {
       if (!t.preActivation) {
         throw new Error('PreActivation required to check guards');
       }
-      return t.preActivation.checkGuards().pipe(map(guardsResult => ({...t, guardsResult})));
+      return t.preActivation.checkGuards().pipe(map(guardsResult => {
+        if (typeof guardsResult === 'boolean') {
+          return {...t, guardsResult};
+        } else {
+          return t;
+        }
+      }));
     }));
   };
 }
