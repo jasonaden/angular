@@ -12,5 +12,7 @@
  * Entry point for all public APIs of this package.
  */
 export * from './src/upgrade';
+export * from './src/angular-js/module';
+export {RenderAngularJsRoute} from './src/render-angular-js.component';
 
 // This file only reexports content of the `src` folder. Keep it that way.

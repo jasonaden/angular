@@ -13,7 +13,8 @@ const globals = {
   '@angular/core': 'ng.core',
   '@angular/common': 'ng.common',
   '@angular/router': 'ng.router',
-  '@angular/upgrade/static': 'ng.upgrade.static'
+  '@angular/upgrade/static': 'ng.upgrade.static',
+  'rxjs': 'rxjs'
 };
 
 

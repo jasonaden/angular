@@ -7,9 +7,10 @@
  */
 
 import {Location} from '@angular/common';
-import {APP_BOOTSTRAP_LISTENER, ComponentRef, InjectionToken} from '@angular/core';
+import {APP_BOOTSTRAP_LISTENER, ComponentRef, InjectionToken, NgModule} from '@angular/core';
 import {Router} from '@angular/router';
 import {UpgradeModule} from '@angular/upgrade/static';
+import {RenderAngularJsRoute} from './render-angular-js.component';
 
 /**
  * @description
@@ -110,4 +111,13 @@ function resolveUrl(url: string): {pathname: string, search: string, hash: strin
     search: anchor.search,
     hash: anchor.hash
   };
+}
+
+@NgModule({
+  // imports: [LocationUpgradeModule],
+  declarations: [RenderAngularJsRoute],
+  exports: [RenderAngularJsRoute],
+  entryComponents: [RenderAngularJsRoute]
+})
+export class RouterUpgradeModule {
 }
