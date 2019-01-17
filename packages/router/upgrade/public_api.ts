@@ -14,5 +14,8 @@
 export * from './src/upgrade';
 export * from './src/angular-js/module';
 export {RenderAngularJsRoute} from './src/render-angular-js.component';
+export * from './src/route_module';
+export * from './src/route';
+export * from './src/utils';
 
 // This file only reexports content of the `src` folder. Keep it that way.

@@ -9,7 +9,9 @@
 import {Location, PlatformLocation} from '@angular/common';
 import {Router} from '@angular/router';
 import {downgradeInjectable} from '@angular/upgrade/static';
+import {AngularJsRouteService} from '../route';
 
 export const DowngradedLocation = downgradeInjectable(Location);
 export const DowngradedPlatformLocation = downgradeInjectable(PlatformLocation);
 export const DowngradedRouter = downgradeInjectable(Router);
+export const DowngradedAngularJsRouteService = downgradeInjectable(AngularJsRouteService);
