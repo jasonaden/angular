@@ -40,27 +40,15 @@ export function addAngularJsRoutes(router: Router, routes: {[path: string]: any}
   router.config.splice(startIdx, 0, ...angularRoutes);
 }
 
-export function setupAngularJsRouteService(
-    router: Router, modules: string[], ngUpgrade: UpgradeModule) {
-  if (!ngUpgrade.$injector) {
-    ngUpgrade.bootstrap(document.body, modules);
-    // throw new Error(
-    //     `AngularJsRouteService can be used only after UpgradeModule.bootstrap has been called.`);
-  }
+export function setupAngularJsRouteService(router: Router) {
+  return new AngularJsRouteService(router);
+}
 
-  const $rootScope = ngUpgrade.$injector.get('$rootScope');
-  const $location = ngUpgrade.$injector.get('$location');
-  const $routeParams = ngUpgrade.$injector.get('$routeParams');
-  const $q = ngUpgrade.$injector.get('$q');
-  const $injector = ngUpgrade.$injector;
-  const $templateRequest = ngUpgrade.$injector.get('$templateRequest');
-  const $sce = ngUpgrade.$injector.get('$sce');
-  const $browser = ngUpgrade.$injector.get('$browser');
+export const $routeProvider = new InjectionToken<AngularJsRouteService>('$routeProvider');
 
-  const ajsRouteService = new AngularJsRouteService(
-      $rootScope, $location, $routeParams, $q, $injector, $templateRequest, $sce, $browser, router);
-
-  return ajsRouteService;
+export function setup$routeProvider(
+    $route: AngularJsRouteService, modules: string[], ngUpgrade: UpgradeModule) {
+  return $route.setup(modules, ngUpgrade);
 }
 
 export class AngularJsRouteService {
@@ -68,16 +56,46 @@ export class AngularJsRouteService {
   current: any = {};
   forceReload: boolean = false;
 
-  constructor(
-      private $rootScope: any, private $location: any, private $routeParams: any, private $q: any,
-      private $injector: any, private $templateRequest: any, private $sce: any,
-      private $browser: any, private router: Router) {
+  private $rootScope: any;
+  private $location: any;
+  private $routeParams: any;
+  private $q: any;
+
+  private $injector: any;
+  private $templateRequest: any;
+  private $sce: any;
+
+  private $browser: any;
+
+  // constructor(
+  //     private $rootScope: any, private $location: any, private $routeParams: any, private $q:
+  //     any,
+  //     private $injector: any, private $templateRequest: any, private $sce: any,
+  //     private $browser: any, private router: Router) {
+  constructor(private router: Router) {
     console.group('@angular/router/upgrade:AngularJsRouteService Constructor');
     // tslint:disable
     console.log('This constructor should run when AngularJS is loaded');
     console.log(arguments);
     // tslint:enable
     console.groupEnd();
+  }
+
+  setup(modules: string[], ngUpgrade: UpgradeModule) {
+    if (!ngUpgrade.$injector) {
+      ngUpgrade.bootstrap(document.body, modules);
+    }
+
+    this.$rootScope = ngUpgrade.$injector.get('$rootScope');
+    this.$location = ngUpgrade.$injector.get('$location');
+    this.$routeParams = ngUpgrade.$injector.get('$routeParams');
+    this.$q = ngUpgrade.$injector.get('$q');
+    this.$injector = ngUpgrade.$injector;
+    this.$templateRequest = ngUpgrade.$injector.get('$templateRequest');
+    this.$sce = ngUpgrade.$injector.get('$sce');
+    this.$browser = ngUpgrade.$injector.get('$browser');
+
+    return this;
   }
 
   /**

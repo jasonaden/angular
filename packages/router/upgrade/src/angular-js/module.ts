@@ -8,7 +8,7 @@
 
 import {getAngularJSGlobal} from '@angular/upgrade/static';
 
-import {DowngradedAngularJsRouteService, DowngradedLocation, DowngradedPlatformLocation, DowngradedRouter} from './downgrade';
+import {Downgraded$RouteProvider, DowngradedLocation, DowngradedPlatformLocation, DowngradedRouter} from './downgrade';
 import {UpgradeLocationProvider} from './location';
 import {ngRouteUpgradeModule} from './route';
 
@@ -16,9 +16,10 @@ const angular = getAngularJSGlobal();
 
 export const ROUTER_UPGRADE_MODULE = 'RouterUpgradeModule';
 export const upgradeModule = angular.module(ROUTER_UPGRADE_MODULE, [ngRouteUpgradeModule.name])
-                                 .factory('$route', DowngradedAngularJsRouteService)
+                                 .factory('$route', Downgraded$RouteProvider)
                                  .factory('DowngradedLocation', DowngradedLocation)
                                  .factory('DowngradedPlatformLocation', DowngradedPlatformLocation)
                                  .factory('DowngradedRouter', DowngradedRouter)
-                                 .provider('$location', UpgradeLocationProvider);
-// .provider('$route', RouteProvider);
+                                 .provider('$location', UpgradeLocationProvider)
+                                 // Force $route to be instantiated immediately.
+                                 .run(['$route', ($route: any) => {}]);

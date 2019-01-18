@@ -9,9 +9,13 @@
 import {Location, PlatformLocation} from '@angular/common';
 import {Router} from '@angular/router';
 import {downgradeInjectable} from '@angular/upgrade/static';
-import {AngularJsRouteService} from '../route';
+import {$routeProvider} from '../route';
 
+// TODO: Remove downgraded Angular services in favor of building $location
+// replacement in Angular and downgrading that service. Similar to the
+// Downgraded$RouterProvider below
 export const DowngradedLocation = downgradeInjectable(Location);
 export const DowngradedPlatformLocation = downgradeInjectable(PlatformLocation);
 export const DowngradedRouter = downgradeInjectable(Router);
-export const DowngradedAngularJsRouteService = downgradeInjectable(AngularJsRouteService);
+
+export const Downgraded$RouteProvider = downgradeInjectable($routeProvider);

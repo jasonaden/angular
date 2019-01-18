@@ -9,7 +9,7 @@
 import {Route} from '@angular/router';
 import {RenderAngularJsRoute} from './render-angular-js.component';
 
-export const ANGULARJS_ROUTE_CONFIG = Symbol('ANGULARJS_ROUTE_CONFIG');
+export const ANGULARJS_ROUTE_CONFIG = 'ANGULARJS_ROUTE_CONFIG';
 
 /**
  * Maps AngularJS path and route config to Angular route config.
