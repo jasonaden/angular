@@ -79,6 +79,11 @@ export class Location {
   }
 
   /**
+   * Returns the current value of the history.state object.
+   */
+  getState(): unknown { return this._platformStrategy.getState(); }
+
+  /**
    * Normalizes the given path and compares to the current normalized path.
    */
   isCurrentPathEqualTo(path: string, query: string = ''): boolean {

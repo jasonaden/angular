@@ -36,8 +36,8 @@ export abstract class LocationStrategy {
   abstract back(): void;
   abstract onPopState(fn: LocationChangeListener): void;
   abstract getBaseHref(): string;
+  abstract getState(): unknown
 }
-
 
 /**
  * The `APP_BASE_HREF` token represents the base href to be used with the

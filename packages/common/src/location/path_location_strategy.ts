@@ -94,4 +94,6 @@ export class PathLocationStrategy extends LocationStrategy {
   forward(): void { this._platformLocation.forward(); }
 
   back(): void { this._platformLocation.back(); }
+
+  getState(): unknown { return this._platformLocation.getState(); }
 }
