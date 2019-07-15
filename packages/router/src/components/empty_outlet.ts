@@ -16,9 +16,9 @@ import {Component} from '@angular/core';
  *
  * In order to render, there needs to be a component on this config, which will default
  * to this `EmptyOutletComponent`.
+ *
+ * @publicApi
  */
 @Component({template: `<router-outlet></router-outlet>`})
-export class ɵEmptyOutletComponent {
+export class EmptyOutletComponent {
 }
-
-export {ɵEmptyOutletComponent as EmptyOutletComponent};

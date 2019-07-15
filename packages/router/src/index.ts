@@ -7,6 +7,7 @@
  */
 
 
+export {EmptyOutletComponent} from './components/empty_outlet';
 export {Data, DeprecatedLoadChildren, LoadChildren, LoadChildrenCallback, ResolveData, Route, Routes, RunGuardsAndResolvers, UrlMatchResult, UrlMatcher} from './config';
 export {RouterLink, RouterLinkWithHref} from './directives/router_link';
 export {RouterLinkActive} from './directives/router_link_active';

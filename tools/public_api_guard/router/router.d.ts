@@ -106,6 +106,9 @@ export declare type DeprecatedLoadChildren = string;
 
 export declare type DetachedRouteHandle = {};
 
+export declare class EmptyOutletComponent {
+}
+
 export declare type Event = RouterEvent | RouteConfigLoadStart | RouteConfigLoadEnd | ChildActivationStart | ChildActivationEnd | ActivationStart | ActivationEnd | Scroll;
 
 export interface ExtraOptions {
